@@ -4,18 +4,18 @@ import "net/http"
 
 type (
 	Builder struct {
-		baseUrl string
-		cookies []*http.Cookie
-		headers http.Header
-		client  Client
+		baseUrl      string
+		cookies      []*http.Cookie
+		headers      http.Header
+		client       Client
 		unmarshalers []*ConditionalUnmarshaler
 	}
 
 	Creator struct {
-		baseUrl string
-		cookies []*http.Cookie
-		headers http.Header
-		client  Client
+		baseUrl      string
+		cookies      []*http.Cookie
+		headers      http.Header
+		client       Client
 		unmarshalers []*ConditionalUnmarshaler
 	}
 
@@ -27,8 +27,9 @@ type (
 
 func NewBuilder() *Builder {
 	return &Builder{
-		cookies: make([]*http.Cookie, 0),
-		headers: make(http.Header),
+		cookies:      make([]*http.Cookie, 0),
+		headers:      make(http.Header),
+		unmarshalers: make([]*ConditionalUnmarshaler, 0),
 	}
 }
 
@@ -57,6 +58,20 @@ func (builder *Builder) AddHeader(key, value string) *Builder {
 	return builder
 }
 
+func (builder *Builder) AddUnmarshaler(unmarshaler Unmarshaler, checker Checker) *Builder {
+	builder.unmarshalers = append(builder.unmarshalers, &ConditionalUnmarshaler{checker, unmarshaler})
+	return builder
+}
+
+func (builder *Builder) AddUnmarshalFunc(unmarshaler UnmarshalFunc, checker Checker) *Builder {
+	return builder.AddUnmarshaler(unmarshaler, checker)
+}
+
+func (builder *Builder) SetClient(client Client) *Builder {
+	builder.client = client
+	return builder
+}
+
 func (builder *Builder) Build() *Creator {
 	if builder.baseUrl == "" {
 		panic(BaseUrlCannotBeEmpty)
@@ -67,10 +82,11 @@ func (builder *Builder) Build() *Creator {
 	}
 
 	return &Creator{
-		baseUrl: builder.baseUrl,
-		cookies: builder.cookies,
-		headers: builder.headers,
-		client:  builder.client,
+		baseUrl:      builder.baseUrl,
+		cookies:      builder.cookies,
+		headers:      builder.headers,
+		client:       builder.client,
+		unmarshalers: builder.unmarshalers,
 	}
 }
 
