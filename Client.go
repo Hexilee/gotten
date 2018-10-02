@@ -2,7 +2,7 @@ package gotten
 
 import "net/http"
 
-type(
+type (
 	Client interface {
 		Do(r *http.Request) (*http.Response, error)
 	}

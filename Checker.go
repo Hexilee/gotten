@@ -26,7 +26,7 @@ func (fn CheckerFunc) Check(resp *http.Response) bool {
 	return fn(resp)
 }
 
-func (set HeaderSet) add(key string, values ... string) {
+func (set HeaderSet) add(key string, values ...string) {
 	key = textproto.CanonicalMIMEHeaderKey(key)
 	for _, value := range values {
 		if set[key] == nil {
@@ -45,7 +45,7 @@ func (set HeaderSet) contain(key, value string) (contain bool) {
 	return
 }
 
-func (set StatusSet) add(statuses ... int) {
+func (set StatusSet) add(statuses ...int) {
 	for _, status := range statuses {
 		set[status] = true
 	}
@@ -56,7 +56,7 @@ func (set StatusSet) contain(status int) (contain bool) {
 	return
 }
 
-func (factory *CheckerFactory) When(key string, values ... string) *CheckerFactory {
+func (factory *CheckerFactory) When(key string, values ...string) *CheckerFactory {
 	if factory.headerSet == nil {
 		factory.headerSet = make(HeaderSet)
 	}
@@ -64,7 +64,7 @@ func (factory *CheckerFactory) When(key string, values ... string) *CheckerFacto
 	return factory
 }
 
-func (factory *CheckerFactory) WhenStatuses(statuses ... int) *CheckerFactory {
+func (factory *CheckerFactory) WhenStatuses(statuses ...int) *CheckerFactory {
 	if factory.statusSet == nil {
 		factory.statusSet = make(StatusSet)
 	}
@@ -72,7 +72,7 @@ func (factory *CheckerFactory) WhenStatuses(statuses ... int) *CheckerFactory {
 	return factory
 }
 
-func (factory *CheckerFactory) WhenContentType(values ... string) *CheckerFactory {
+func (factory *CheckerFactory) WhenContentType(values ...string) *CheckerFactory {
 	return factory.When(headers.HeaderContentType, values...)
 }
 

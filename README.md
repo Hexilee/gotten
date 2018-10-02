@@ -16,7 +16,7 @@ type (
 	}
 
 	SimpleResult struct {
-		Status       gotten.StatusCode `expect:"200"`
+		Status       gotten.Status     `expect:"200"`
 		ExpectResult ExpectResult      `expect:"200"`
 		BadResult    ObjectNotFound    `expect:"404"`
 	}

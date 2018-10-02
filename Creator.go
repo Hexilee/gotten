@@ -1,6 +1,11 @@
 package gotten
 
-import "net/http"
+import (
+	"errors"
+	"net/http"
+	"net/url"
+	"reflect"
+)
 
 type (
 	Builder struct {
@@ -12,7 +17,7 @@ type (
 	}
 
 	Creator struct {
-		baseUrl      string
+		baseUrl      *url.URL
 		cookies      []*http.Cookie
 		headers      http.Header
 		client       Client
@@ -72,24 +77,87 @@ func (builder *Builder) SetClient(client Client) *Builder {
 	return builder
 }
 
-func (builder *Builder) Build() *Creator {
+func (builder *Builder) Build() (creator *Creator, err error) {
 	if builder.baseUrl == "" {
-		panic(BaseUrlCannotBeEmpty)
+		err = errors.New(BaseUrlCannotBeEmpty)
 	}
 
-	if builder.client == nil {
-		builder.client = &http.Client{}
+	if err == nil {
+		var baseUrl *url.URL
+		baseUrl, err = url.Parse(builder.baseUrl)
+		if err == nil {
+			if builder.client == nil {
+				builder.client = &http.Client{}
+			}
+			creator = &Creator{
+				baseUrl:      baseUrl,
+				cookies:      builder.cookies,
+				headers:      builder.headers,
+				client:       builder.client,
+				unmarshalers: builder.unmarshalers,
+			}
+		}
 	}
-
-	return &Creator{
-		baseUrl:      builder.baseUrl,
-		cookies:      builder.cookies,
-		headers:      builder.headers,
-		client:       builder.client,
-		unmarshalers: builder.unmarshalers,
-	}
+	return
 }
 
-func (creator *Creator) Impl(interface{}) (err error) {
-	return err
+func (creator *Creator) Impl(service interface{}) (err error) {
+	serviceVal := reflect.ValueOf(service)
+	if serviceVal.Type().Kind() != reflect.Ptr {
+		err = errors.New(MustPassPtrToImpl)
+	}
+
+	if err == nil {
+		serviceVal = serviceVal.Elem()
+		serviceType := serviceVal.Type()
+		if serviceType.Kind() != reflect.Struct {
+			err = errors.New(ServiceMustBeStruct)
+		}
+
+		if err == nil {
+			for i := 0; i < serviceType.NumField(); i++ {
+				field := serviceType.Field(i)
+				fieldType := field.Type
+				fieldTag := field.Tag
+				fieldValue := serviceVal.Field(i)
+				if fieldType.Kind() == reflect.Func &&
+					fieldValue.CanSet() &&
+					fieldType.NumIn() == 1 &&
+					fieldType.NumOut() == 2 &&
+					fieldType.Out(1) == reflect.TypeOf(errors.New("")) {
+					method := fieldTag.Get(KeyMethod)
+					switch method {
+					case "":
+						method = http.MethodGet
+						fallthrough
+					case http.MethodGet:
+						fallthrough
+					case http.MethodHead:
+						fallthrough
+					case http.MethodPost:
+						fallthrough
+					case http.MethodPut:
+						fallthrough
+					case http.MethodPatch:
+						fallthrough
+					case http.MethodDelete:
+						fallthrough
+					case http.MethodConnect:
+						fallthrough
+					case http.MethodOptions:
+						fallthrough
+					case http.MethodTrace:
+						rawFunc := func([]reflect.Value) []reflect.Value {
+
+							return []reflect.Value{}
+						}
+						fieldValue.Set(reflect.MakeFunc(fieldType, rawFunc))
+					default:
+						err = errors.New(UnrecognizedHTTPMethod)
+					}
+				}
+			}
+		}
+	}
+	return
 }

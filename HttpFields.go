@@ -3,51 +3,55 @@ package gotten
 import "github.com/Hexilee/gotten/headers"
 
 type (
-	Header string
-	HeaderAccept string
-	HeaderAcceptEncoding string
-	HeaderAllow string
-	HeaderAuthorization string
-	HeaderContentDisposition string
-	HeaderContentEncoding string
-	HeaderContentLength string
-	HeaderContentType string
-	HeaderCookie string
-	HeaderSetCookie string
-	HeaderIfModifiedSince string
-	HeaderLastModified string
-	HeaderLocation string
-	HeaderUpgrade string
-	HeaderVary string
-	HeaderWWWAuthenticate string
-	HeaderXForwardedFor string
-	HeaderXForwardedProto string
-	HeaderXForwardedProtocol string
-	HeaderXForwardedSsl string
-	HeaderXUrlScheme string
+	HeaderInterface interface {
+		Key() string
+	}
+
+	Header                    string
+	HeaderAccept              string
+	HeaderAcceptEncoding      string
+	HeaderAllow               string
+	HeaderAuthorization       string
+	HeaderContentDisposition  string
+	HeaderContentEncoding     string
+	HeaderContentLength       string
+	HeaderContentType         string
+	HeaderCookie              string
+	HeaderSetCookie           string
+	HeaderIfModifiedSince     string
+	HeaderLastModified        string
+	HeaderLocation            string
+	HeaderUpgrade             string
+	HeaderVary                string
+	HeaderWWWAuthenticate     string
+	HeaderXForwardedFor       string
+	HeaderXForwardedProto     string
+	HeaderXForwardedProtocol  string
+	HeaderXForwardedSsl       string
+	HeaderXUrlScheme          string
 	HeaderXHTTPMethodOverride string
-	HeaderXRealIP string
-	HeaderXRequestID string
-	HeaderServer string
-	HeaderOrigin string
+	HeaderXRealIP             string
+	HeaderXRequestID          string
+	HeaderServer              string
+	HeaderOrigin              string
 
 	// Access control
-	HeaderAccessControlRequestMethod string
-	HeaderAccessControlRequestHeaders string
-	HeaderAccessControlAllowOrigin string
-	HeaderAccessControlAllowMethods string
-	HeaderAccessControlAllowHeaders string
+	HeaderAccessControlRequestMethod    string
+	HeaderAccessControlRequestHeaders   string
+	HeaderAccessControlAllowOrigin      string
+	HeaderAccessControlAllowMethods     string
+	HeaderAccessControlAllowHeaders     string
 	HeaderAccessControlAllowCredentials string
-	HeaderAccessControlExposeHeaders string
-	HeaderAccessControlMaxAge string
+	HeaderAccessControlExposeHeaders    string
+	HeaderAccessControlMaxAge           string
 
 	// Security
 	HeaderStrictTransportSecurity string
-	HeaderXContentTypeOptions string
-	HeaderXXSSProtection string
-	HeaderXFrameOptions string
-	HeaderContentSecurityPolicy string
-	HeaderXCSRFToken string
+	HeaderXContentTypeOptions     string
+	HeaderXXSSProtection          string
+	HeaderXFrameOptions           string
+	HeaderContentSecurityPolicy   string
+	HeaderXCSRFToken              string
 )
 
 func (i HeaderAccept) Key() string {

@@ -6,10 +6,10 @@ type (
 	PathVar interface {
 		String() string
 	}
-	Query interface {
+	QueryVar interface {
 		String() string
 	}
-	Part interface {
+	PartVar interface {
 		String() string
 	}
 
