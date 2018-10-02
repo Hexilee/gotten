@@ -8,6 +8,7 @@ type (
 		cookies []*http.Cookie
 		headers http.Header
 		client  Client
+		unmarshalers []*ConditionalUnmarshaler
 	}
 
 	Creator struct {
@@ -15,6 +16,12 @@ type (
 		cookies []*http.Cookie
 		headers http.Header
 		client  Client
+		unmarshalers []*ConditionalUnmarshaler
+	}
+
+	ConditionalUnmarshaler struct {
+		Checker
+		Unmarshaler
 	}
 )
 
