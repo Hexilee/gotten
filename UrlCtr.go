@@ -5,30 +5,19 @@ import (
 )
 
 type (
-	UrlConstructor interface {
-		getUrl() *url.URL
-	}
-
-	UrlBuilder struct {
-		path VarsConstructor
-		base *url.URL
-	}
-
 	UrlCtr struct {
-		path    VarsConstructor
-		queries map[string]*QueryField
-		base    *url.URL
+		vars VarsConstructor
+		base *url.URL
 	}
 )
 
-func newUrlBuilder(base *url.URL, constructor VarsConstructor) *UrlBuilder {
-	return &UrlBuilder{
-		path: constructor,
+func newUrlCtr(base *url.URL, vars VarsConstructor) *UrlCtr {
+	return &UrlCtr{
+		vars: vars,
 		base: base,
 	}
 }
 
-func (urlCtr *UrlCtr) getUrl() *url.URL {
-	// TODO: *UrlCtr.getUrl
-	return nil
+func (urlCtr *UrlCtr) getUrl() string {
+	return urlCtr.base.ResolveReference(urlCtr.vars.getUrl()).String()
 }
