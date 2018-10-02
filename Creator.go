@@ -21,7 +21,7 @@ type (
 func NewBuilder() *Builder {
 	return &Builder{
 		cookies: make([]*http.Cookie, 0),
-		headers: make(map[string][]string),
+		headers: make(http.Header),
 	}
 }
 

@@ -1,5 +1,5 @@
 package gotten
 
 type (
-	StatusCode int
+	Status int
 )

@@ -1,9 +1,11 @@
 package gotten
 
 const (
-	Key     = "key"
-	Method  = "method"
-	Type    = "type"
-	Path    = "path"
-	Default = "default"
+	KeyKey     = "key"
+	KeyMethod  = "http"
+	KeyType    = "type"
+	KeyStatus  = "status"
+	KeyPath    = "path"
+	KeyDefault = "default"
+	Action     = "add"
 )
