@@ -104,14 +104,14 @@ func (builder *Builder) Build() (creator *Creator, err error) {
 func (creator *Creator) Impl(service interface{}) (err error) {
 	serviceVal := reflect.ValueOf(service)
 	if serviceVal.Type().Kind() != reflect.Ptr {
-		err = errors.New(MustPassPtrToImpl)
+		err = MustPassPtrToImplError(serviceVal.Type())
 	}
 
 	if err == nil {
 		serviceVal = serviceVal.Elem()
 		serviceType := serviceVal.Type()
 		if serviceType.Kind() != reflect.Struct {
-			err = errors.New(ServiceMustBeStruct)
+			err = ServiceMustBeStructError(serviceType)
 		}
 
 		if err == nil {
@@ -153,7 +153,7 @@ func (creator *Creator) Impl(service interface{}) (err error) {
 						}
 						fieldValue.Set(reflect.MakeFunc(fieldType, rawFunc))
 					default:
-						err = errors.New(UnrecognizedHTTPMethod)
+						err = UnrecognizedHTTPMethodError(method)
 					}
 				}
 			}

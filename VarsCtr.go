@@ -1,8 +1,10 @@
 package gotten
 
 import (
+	"fmt"
 	"net/url"
 	"reflect"
+	"strconv"
 )
 
 type (
@@ -12,17 +14,19 @@ type (
 	}
 
 	VarsParser struct {
-		path    string
-		paths   map[string]*PathField
-		queries map[string]*QueryField
+		path         string
+		pathSegments []string
+		pathFields   map[string]*PathField
+		queryFields  map[string]*QueryField
 	}
 
 	VarsCtr struct {
-		path        string
-		paths       map[string]*PathField
-		queries     map[string]*QueryField
-		pathPairs   map[string]string
-		queryValues url.Values
+		path         string
+		pathSegments []string
+		pathPairs    map[string]string
+		pathFields   map[string]*PathField
+		queryFields  map[string]*QueryField
+		queryValues  url.Values
 	}
 
 	QueryField struct {
@@ -35,16 +39,35 @@ type (
 	PathField struct {
 		key          string
 		defaultValue string
+		order        int
 		getValue     func(value reflect.Value) string
 	}
 )
 
 func newVarsParser(path string) *VarsParser {
 	return &VarsParser{
-		path:    path,
-		paths:   make(map[string]*PathField),
-		queries: make(map[string]*QueryField),
+		path:         path,
+		pathSegments: make([]string, 0),
+		pathFields:   make(map[string]*PathField),
+		queryFields:  make(map[string]*QueryField),
 	}
+}
+
+func (parser *VarsParser) parse(paramType reflect.Type) (err error) {
+	paramElem := paramType.Elem()
+	if paramType.Kind() != reflect.Ptr || paramElem.Kind() != reflect.Struct {
+		err = ParamTypeMustBePtrOfStructError(paramElem)
+	}
+
+	if err == nil {
+		for i := 0; i < paramElem.NumField(); i++ {
+			// TODO: parse vars
+			//field := paramElem.Field(i)
+
+		}
+	}
+
+	return
 }
 
 func (varsCtr *VarsCtr) getUrl() *url.URL {
@@ -55,4 +78,28 @@ func (varsCtr *VarsCtr) getUrl() *url.URL {
 func (varsCtr *VarsCtr) setValues(value reflect.Value) error {
 	// TODO: *UrlCtr.setValues
 	return nil
+}
+
+func getValueFromVar(value reflect.Value) string {
+	stringer, ok := value.Interface().(fmt.Stringer)
+	if !ok {
+		panic(ValueIsNotStringerError(value.Type()))
+	}
+	return stringer.String()
+}
+
+func getValueFromString(value reflect.Value) string {
+	val, ok := value.Interface().(string)
+	if !ok {
+		panic(ValueIsNotStringError(value.Type()))
+	}
+	return val
+}
+
+func getValueFromInt(value reflect.Value) string {
+	val, ok := value.Interface().(int)
+	if !ok {
+		panic(ValueIsNotStringError(value.Type()))
+	}
+	return strconv.Itoa(val)
 }
