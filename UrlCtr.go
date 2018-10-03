@@ -18,6 +18,10 @@ func newUrlCtr(base *url.URL, vars VarsConstructor) *UrlCtr {
 	}
 }
 
-func (urlCtr *UrlCtr) getUrl() string {
-	return urlCtr.base.ResolveReference(urlCtr.vars.getUrl()).String()
+func (urlCtr *UrlCtr) getUrl() (result *url.URL, err error) {
+	result, err = urlCtr.vars.getUrl()
+	if err == nil {
+		result = urlCtr.base.ResolveReference(result)
+	}
+	return
 }

@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
+	"strings"
 )
 
 const (
@@ -18,8 +19,9 @@ const (
 	DuplicatedPathKey          = "duplicated path key"
 	UnrecognizedFieldType      = "field type is unrecognized"
 	UnrecognizedPathKey        = "path key is unrecognized"
-	EmptyPathVariable          = "path variable is empty"
+	EmptyRequiredVariable      = "required variable is empty"
 	UnsupportedFieldType       = "field type is unsupported"
+	SomePathVarHasNoValue      = "some pathValue has no value"
 )
 
 func MustPassPtrToImplError(p reflect.Type) error {
@@ -62,10 +64,21 @@ func UnrecognizedPathKeyError(key string) error {
 	return errors.New(UnrecognizedPathKey + ": " + key)
 }
 
-func EmptyPathVariableError(key string) error {
-	return errors.New(EmptyPathVariable + ": " + key)
+func EmptyRequiredVariableError(key string) error {
+	return errors.New(EmptyRequiredVariable + ": " + key)
 }
 
 func UnsupportedFieldTypeError(fieldType reflect.Type, valueType string) error {
-	return errors.New(fmt.Sprintf(UnrecognizedFieldType+": %s -> %s", fieldType, valueType))
+	return errors.New(fmt.Sprintf(UnsupportedFieldType+": %s -> %s", fieldType, valueType))
+}
+
+func SomePathVarHasNoValueError(list PathKeyList) error {
+	buf := strings.Builder{}
+	buf.WriteString(SomePathVarHasNoValue)
+	buf.WriteString(": ")
+	for key := range list {
+		buf.WriteString(" ")
+		buf.WriteString(key)
+	}
+	return errors.New(buf.String())
 }

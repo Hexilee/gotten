@@ -15,6 +15,7 @@ import (
 const (
 	PathKeyRegexp = `\{[a-zA-Z_][0-9a-zA-Z_]*\}`
 	ZeroStr       = ""
+	ZeroInt       = 0
 )
 
 var (
@@ -24,38 +25,46 @@ var (
 type (
 	VarsConstructor interface {
 		setValues(value reflect.Value) error
-		getUrl() *url.URL
+		getUrl() (*url.URL, error)
 	}
 
 	VarsParser struct {
 		regex       *regexp.Regexp
 		path        string
 		pathKeys    PathKeyList
-		pathFields  map[string]*PathField  // pathKey as mapKey
-		queryFields map[string]*QueryField // fieldName as mapKey
+		fieldTables []*Field
 	}
 
 	VarsCtr struct {
 		regex       *regexp.Regexp
 		path        string
-		pathFields  map[string]*PathField
-		queryFields map[string]*QueryField
+		fieldTables []*Field
+		pathValues  map[string]string
 		queryValues url.Values
 	}
 
-	QueryField struct {
+	Field struct {
 		key          string
+		name         string
 		defaultValue string
+		valueType    string
 		require      bool
 		getValueFunc func(value reflect.Value) string
 	}
 
-	PathField struct {
-		defaultValue string
-		key          string
-		value        string
-		getValueFunc func(value reflect.Value) string
-	}
+	//QueryField struct {
+	//	key          string
+	//	defaultValue string
+	//	require      bool
+	//	getValueFunc func(value reflect.Value) string
+	//}
+	//
+	//PathField struct {
+	//	defaultValue string
+	//	key          string
+	//	value        string
+	//	getValueFunc func(value reflect.Value) string
+	//}
 
 	PathKeyList map[string]bool
 )
@@ -63,11 +72,9 @@ type (
 func newVarsParser(path string) (*VarsParser, error) {
 	pathKeys, err := getPathKeys(pathKeyRegexp, path)
 	return &VarsParser{
-		regex:       pathKeyRegexp,
-		path:        path,
-		pathKeys:    pathKeys,
-		pathFields:  make(map[string]*PathField),
-		queryFields: make(map[string]*QueryField),
+		regex:    pathKeyRegexp,
+		path:     path,
+		pathKeys: pathKeys,
 	}, err
 }
 
@@ -84,27 +91,19 @@ func getPathKeys(regex *regexp.Regexp, path string) (pathKeys PathKeyList, err e
 	return
 }
 
-func (field PathField) getValue() (val string, err error) {
-	val = field.value
-	if !field.hasValue() {
+func (field Field) getValue(value reflect.Value) (val string, err error) {
+	val = field.getValueFunc(value)
+	if val == ZeroStr {
 		val = field.defaultValue
-		if !field.hasDefaultValue() {
-			err = EmptyPathVariableError(field.key)
+		if !field.hasDefaultValue() && field.require {
+			err = EmptyRequiredVariableError(field.key)
 		}
 	}
 	return
 }
 
-func (field QueryField) hasDefaultValue() bool {
-	return field.defaultValue == ZeroStr
-}
-
-func (field PathField) hasDefaultValue() bool {
-	return field.defaultValue == ZeroStr
-}
-
-func (field PathField) hasValue() bool {
-	return field.value == ZeroStr
+func (field Field) hasDefaultValue() bool {
+	return field.defaultValue != ZeroStr
 }
 
 func (list PathKeyList) addKey(key string) (added bool) {
@@ -134,6 +133,8 @@ func (parser *VarsParser) parse(paramType reflect.Type) (err error) {
 	}
 
 	if err == nil {
+		parser.fieldTables = make([]*Field, paramElem.NumField())
+	FieldCycle:
 		for i := 0; i < paramElem.NumField(); i++ {
 			field := paramElem.Field(i)
 			if fieldExportable(field.Name) {
@@ -144,35 +145,33 @@ func (parser *VarsParser) parse(paramType reflect.Type) (err error) {
 				defaultValue := fieldTag.Get(KeyDefault)
 				require, parseErr := processRequired(fieldTag.Get(KeyRequire))
 				if err = parseErr; err == nil {
+					parser.fieldTables[i] = &Field{
+						key:          key,
+						name:         field.Name,
+						defaultValue: defaultValue,
+						valueType:    valueType,
+						require:      require,
+					}
 
 					switch valueType {
 					case TypePath:
 						if exist := parser.pathKeys.deleteKey(key); !exist {
 							err = UnrecognizedPathKeyError(key)
-							break
+							break FieldCycle
 						}
-
-						pathField := &PathField{
-							defaultValue: defaultValue,
-							key:          key,
-						}
-						pathField.getValueFunc, err = FirstValueGetterFunc(fieldType, TypePath)
-						if err == nil {
-							parser.pathFields[key] = pathField
-						}
-
+						parser.fieldTables[i].require = true // path is always required
+						fallthrough
 					case TypeQuery:
-						queryField := &QueryField{
-							defaultValue: defaultValue,
-							key:          key,
-							require:      require,
+						fallthrough
+					case TypeForm:
+						parser.fieldTables[i].getValueFunc, err = FirstValueGetterFunc(fieldType, TypePath)
+						if err != nil {
+							break FieldCycle
 						}
-						queryField.getValueFunc, err = FirstValueGetterFunc(fieldType, TypePath)
-					// TODO: TypeHeader
+						// TODO: TypeHeader
 					case TypeHeader:
 					case TypeJSON:
 					case TypeMultipart:
-					case TypeForm:
 					case TypeXML:
 					default:
 						err = UnrecognizedFieldTypeError(fieldTag.Get(KeyType))
@@ -180,25 +179,63 @@ func (parser *VarsParser) parse(paramType reflect.Type) (err error) {
 				}
 			}
 		}
+		if err == nil && !parser.pathKeys.empty() {
+			err = SomePathVarHasNoValueError(parser.pathKeys)
+		}
 	}
 
 	return
 }
 
-func (varsCtr *VarsCtr) getUrl() *url.URL {
-	// TODO: *varsCtr.getUrl
-	return nil
+func (parser *VarsParser) Builder() VarsConstructor {
+	return &VarsCtr{
+		regex:       parser.regex,
+		path:        parser.path,
+		fieldTables: parser.fieldTables,
+		pathValues:  make(map[string]string),
+		queryValues: make(url.Values),
+	}
 }
 
-func (varsCtr *VarsCtr) setValues(value reflect.Value) error {
-	// TODO: *UrlCtr.setValues
-	return nil
+func (varsCtr VarsCtr) getUrl() (result *url.URL, err error) {
+	path := varsCtr.regex.ReplaceAllStringFunc(varsCtr.path, varsCtr.findAndReplace)
+	result, err = url.Parse(path)
+	if err == nil {
+		query := varsCtr.queryValues.Encode()
+		result.RawQuery = query
+	}
+	return
+}
+
+func (varsCtr *VarsCtr) setValues(ptr reflect.Value) (err error) {
+	value := ptr.Elem()
+RangeCycle:
+	for i, field := range varsCtr.fieldTables {
+		if field != nil {
+			fieldValue := value.Field(i)
+			switch field.valueType {
+			case TypePath:
+				varsCtr.pathValues[field.key], err = field.getValue(fieldValue)
+				if err != nil {
+					break RangeCycle
+				}
+			case TypeQuery:
+				val := ""
+				val, err = field.getValue(fieldValue)
+				if err != nil {
+					break RangeCycle
+				}
+				varsCtr.queryValues.Add(field.key, val)
+			}
+		}
+	}
+	return
 }
 
 // str: {key}
 func (varsCtr VarsCtr) findAndReplace(pattern string) string {
 	key := getKeyFromPattern(pattern)
-	return varsCtr.pathFields[key].value
+	return varsCtr.pathValues[key]
 }
 
 func (varsCtr VarsCtr) genPath() string {
@@ -221,12 +258,16 @@ func getValueFromString(value reflect.Value) string {
 	return val
 }
 
-func getValueFromInt(value reflect.Value) string {
+func getValueFromInt(value reflect.Value) (str string) {
 	val, ok := value.Interface().(int)
 	if !ok {
 		panic(ValueIsNotIntError(value.Type()))
 	}
-	return strconv.Itoa(val)
+
+	if val != ZeroInt {
+		str = strconv.Itoa(val)
+	}
+	return
 }
 
 func getKeyFromPattern(pattern string) string {

@@ -1,9 +1,35 @@
 package gotten
 
 import (
+	"fmt"
 	"github.com/stretchr/testify/assert"
+	"reflect"
+	"strconv"
 	"testing"
 )
+
+const (
+	ComplexPath = "/post/{year}/{m}/{d}/{hash_id}"
+)
+
+type (
+	Day struct {
+		day int
+	}
+
+	SimpleParams struct {
+		Year   int          `type:"path" default:"2018"`
+		Month  string       `type:"path" key:"m"`
+		Day    fmt.Stringer `type:"path" key:"d"`
+		HashId string       `type:"path"`
+		Page   int          `type:"query" default:"1"`
+		Num    int          `type:"query" require:"true"`
+	}
+)
+
+func (day Day) String() string {
+	return strconv.Itoa(day.day)
+}
 
 func TestPathKeyList(t *testing.T) {
 	// test addKey
@@ -67,10 +93,10 @@ func TestPathKeyRegexp(t *testing.T) {
 }
 
 func TestFieldExportable(t *testing.T) {
-	for _, testCase := range []struct{
-		name string
+	for _, testCase := range []struct {
+		name       string
 		exportable bool
-	} {
+	}{
 		{"Name", true},
 		{"N", true},
 		{"nAME", false},
@@ -78,5 +104,31 @@ func TestFieldExportable(t *testing.T) {
 		{"n", false},
 	} {
 		assert.Equal(t, testCase.exportable, fieldExportable(testCase.name))
+	}
+}
+
+func TestVarsParser(t *testing.T) {
+	parser, err := newVarsParser(ComplexPath)
+	assert.Nil(t, err)
+	assert.Nil(t, parser.parse(reflect.TypeOf(new(SimpleParams))))
+
+	for _, testCase := range []struct {
+		params *SimpleParams
+		path   string
+		query  string
+	}{
+		{&SimpleParams{
+			Month:  "1",
+			Day:    Day{1},
+			HashId: "1",
+			Num:    10,
+		}, `/post/2018/1/1/1`, `num=10&page=1`},
+	} {
+		ctr := parser.Builder()
+		assert.Nil(t, ctr.setValues(reflect.ValueOf(testCase.params)))
+		result, err := ctr.getUrl()
+		assert.Nil(t, err)
+		assert.Equal(t, testCase.path, result.Path)
+		assert.Equal(t, testCase.query, result.RawQuery)
 	}
 }

@@ -53,16 +53,19 @@ type (
 	//
 	//	PartReader io.Reader
 	//
+
+	Types struct {
+		stringer fmt.Stringer
+		reader   io.Reader
+	}
 )
 
 //
 var (
-	stringer fmt.Stringer
-	reader   io.Reader
-	partFile PartFile
-
-	StringerType = reflect.TypeOf(stringer)
-	ReaderType   = reflect.TypeOf(reader)
+	types        = Types{}
+	partFile     = PartFile("")
+	StringerType = reflect.ValueOf(types).FieldByName("stringer").Type()
+	ReaderType   = reflect.ValueOf(types).FieldByName("reader").Type()
 	PartFileType = reflect.TypeOf(partFile)
 	IntType      = reflect.TypeOf(int(1))
 	StringType   = reflect.TypeOf("")
@@ -75,12 +78,9 @@ func FirstValueGetterFunc(fieldType reflect.Type, valueType string) (getValueFun
 		getValueFunc = getValueFromInt
 	case StringType:
 		getValueFunc = getValueFromString
+	case StringerType:
+		getValueFunc = getValueFromStringer
 	default:
-		if fieldType.Implements(StringerType) {
-			getValueFunc = getValueFromStringer
-		}
-	}
-	if getValueFunc == nil {
 		err = UnsupportedFieldTypeError(fieldType, valueType)
 	}
 	return
