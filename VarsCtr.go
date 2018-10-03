@@ -4,8 +4,26 @@ import (
 	"fmt"
 	"net/url"
 	"reflect"
+	"regexp"
 	"strconv"
 )
+
+const (
+	PathKeyRegexp      = `\{[a-zA-Z_][0-9a-zA-Z_]*\}`
+	PathKeyRegexpError = "regexp of path key is wrong: " + PathKeyRegexp
+)
+
+var (
+	pathKeyRegexp *regexp.Regexp
+)
+
+func init() {
+	var err error
+	pathKeyRegexp, err = regexp.Compile(PathKeyRegexp)
+	if err != nil {
+		panic(PathKeyRegexpError)
+	}
+}
 
 type (
 	VarsConstructor interface {
@@ -47,9 +65,11 @@ type (
 )
 
 func newVarsParser(path string) *VarsParser {
+
 	return &VarsParser{
 		path:         path,
 		pathSegments: make([]string, 0),
+		pathKeys:     make(PathKeyList),
 		pathFields:   make(map[string]*PathField),
 		queryFields:  make(map[string]*QueryField),
 	}
