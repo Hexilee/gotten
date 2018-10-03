@@ -16,8 +16,9 @@ type (
 	VarsParser struct {
 		path         string
 		pathSegments []string
-		pathFields   map[string]*PathField
-		queryFields  map[string]*QueryField
+		pathKeys     PathKeyList
+		pathFields   map[string]*PathField  // pathKey as mapKey
+		queryFields  map[string]*QueryField // fieldName as mapKey
 	}
 
 	VarsCtr struct {
@@ -37,11 +38,12 @@ type (
 	}
 
 	PathField struct {
-		key          string
 		defaultValue string
 		order        int
 		getValue     func(value reflect.Value) string
 	}
+
+	PathKeyList map[string]bool
 )
 
 func newVarsParser(path string) *VarsParser {
@@ -51,6 +53,26 @@ func newVarsParser(path string) *VarsParser {
 		pathFields:   make(map[string]*PathField),
 		queryFields:  make(map[string]*QueryField),
 	}
+}
+
+func (list PathKeyList) addKey(key string) (added bool) {
+	if _, ok := list[key]; !ok {
+		list[key] = true
+		added = true
+	}
+	return
+}
+
+func (list PathKeyList) deleteKey(key string) (exist bool) {
+	if _, ok := list[key]; ok {
+		delete(list, key)
+		exist = true
+	}
+	return
+}
+
+func (list PathKeyList) empty() bool {
+	return len(list) == 0
 }
 
 func (parser *VarsParser) parse(paramType reflect.Type) (err error) {
