@@ -7,5 +7,5 @@ const (
 	KeyStatus  = "status"
 	KeyPath    = "path"
 	KeyDefault = "default"
-	KeyAction  = "add"
+	KeyRequire = "require"
 )

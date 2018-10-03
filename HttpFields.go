@@ -1,176 +1,279 @@
 package gotten
 
-import "github.com/Hexilee/gotten/headers"
-
-type (
-	HeaderInterface interface {
-		Key() string
-	}
-
-	Header                    string
-	HeaderAccept              string
-	HeaderAcceptEncoding      string
-	HeaderAllow               string
-	HeaderAuthorization       string
-	HeaderContentDisposition  string
-	HeaderContentEncoding     string
-	HeaderContentLength       string
-	HeaderContentType         string
-	HeaderCookie              string
-	HeaderSetCookie           string
-	HeaderIfModifiedSince     string
-	HeaderLastModified        string
-	HeaderLocation            string
-	HeaderUpgrade             string
-	HeaderVary                string
-	HeaderWWWAuthenticate     string
-	HeaderXForwardedFor       string
-	HeaderXForwardedProto     string
-	HeaderXForwardedProtocol  string
-	HeaderXForwardedSsl       string
-	HeaderXUrlScheme          string
-	HeaderXHTTPMethodOverride string
-	HeaderXRealIP             string
-	HeaderXRequestID          string
-	HeaderServer              string
-	HeaderOrigin              string
-
-	// Access control
-	HeaderAccessControlRequestMethod    string
-	HeaderAccessControlRequestHeaders   string
-	HeaderAccessControlAllowOrigin      string
-	HeaderAccessControlAllowMethods     string
-	HeaderAccessControlAllowHeaders     string
-	HeaderAccessControlAllowCredentials string
-	HeaderAccessControlExposeHeaders    string
-	HeaderAccessControlMaxAge           string
-
-	// Security
-	HeaderStrictTransportSecurity string
-	HeaderXContentTypeOptions     string
-	HeaderXXSSProtection          string
-	HeaderXFrameOptions           string
-	HeaderContentSecurityPolicy   string
-	HeaderXCSRFToken              string
+import (
+	"github.com/Hexilee/gotten/headers"
+	"reflect"
 )
 
-func (i HeaderAccept) Key() string {
-	return headers.HeaderAccept
+const (
+	TypeHeader = "header"
+)
+
+type Header string
+
+func (header Header) Value() string {
+	return string(header)
 }
-func (i HeaderAcceptEncoding) Key() string {
-	return headers.HeaderAcceptEncoding
+
+func GetKey(t reflect.Type) (key string, exist bool) {
+	key, exist = HeaderTable[t]
+	return
 }
-func (i HeaderAllow) Key() string {
-	return headers.HeaderAllow
-}
-func (i HeaderAuthorization) Key() string {
-	return headers.HeaderAuthorization
-}
-func (i HeaderContentDisposition) Key() string {
-	return headers.HeaderContentDisposition
-}
-func (i HeaderContentEncoding) Key() string {
-	return headers.HeaderContentEncoding
-}
-func (i HeaderContentLength) Key() string {
-	return headers.HeaderContentLength
-}
-func (i HeaderContentType) Key() string {
-	return headers.HeaderContentType
-}
-func (i HeaderCookie) Key() string {
-	return headers.HeaderCookie
-}
-func (i HeaderSetCookie) Key() string {
-	return headers.HeaderSetCookie
-}
-func (i HeaderIfModifiedSince) Key() string {
-	return headers.HeaderIfModifiedSince
-}
-func (i HeaderLastModified) Key() string {
-	return headers.HeaderLastModified
-}
-func (i HeaderLocation) Key() string {
-	return headers.HeaderLocation
-}
-func (i HeaderUpgrade) Key() string {
-	return headers.HeaderUpgrade
-}
-func (i HeaderVary) Key() string {
-	return headers.HeaderVary
-}
-func (i HeaderWWWAuthenticate) Key() string {
-	return headers.HeaderWWWAuthenticate
-}
-func (i HeaderXForwardedFor) Key() string {
-	return headers.HeaderXForwardedFor
-}
-func (i HeaderXForwardedProto) Key() string {
-	return headers.HeaderXForwardedProto
-}
-func (i HeaderXForwardedProtocol) Key() string {
-	return headers.HeaderXForwardedProtocol
-}
-func (i HeaderXForwardedSsl) Key() string {
-	return headers.HeaderXForwardedSsl
-}
-func (i HeaderXUrlScheme) Key() string {
-	return headers.HeaderXUrlScheme
-}
-func (i HeaderXHTTPMethodOverride) Key() string {
-	return headers.HeaderXHTTPMethodOverride
-}
-func (i HeaderXRealIP) Key() string {
-	return headers.HeaderXRealIP
-}
-func (i HeaderXRequestID) Key() string {
-	return headers.HeaderXRequestID
-}
-func (i HeaderServer) Key() string {
-	return headers.HeaderServer
-}
-func (i HeaderOrigin) Key() string {
-	return headers.HeaderOrigin
-}
-func (i HeaderAccessControlRequestMethod) Key() string {
-	return headers.HeaderAccessControlRequestMethod
-}
-func (i HeaderAccessControlRequestHeaders) Key() string {
-	return headers.HeaderAccessControlRequestHeaders
-}
-func (i HeaderAccessControlAllowOrigin) Key() string {
-	return headers.HeaderAccessControlAllowOrigin
-}
-func (i HeaderAccessControlAllowMethods) Key() string {
-	return headers.HeaderAccessControlAllowMethods
-}
-func (i HeaderAccessControlAllowHeaders) Key() string {
-	return headers.HeaderAccessControlAllowHeaders
-}
-func (i HeaderAccessControlAllowCredentials) Key() string {
-	return headers.HeaderAccessControlAllowCredentials
-}
-func (i HeaderAccessControlExposeHeaders) Key() string {
-	return headers.HeaderAccessControlExposeHeaders
-}
-func (i HeaderAccessControlMaxAge) Key() string {
-	return headers.HeaderAccessControlMaxAge
-}
-func (i HeaderStrictTransportSecurity) Key() string {
-	return headers.HeaderStrictTransportSecurity
-}
-func (i HeaderXContentTypeOptions) Key() string {
-	return headers.HeaderXContentTypeOptions
-}
-func (i HeaderXXSSProtection) Key() string {
-	return headers.HeaderXXSSProtection
-}
-func (i HeaderXFrameOptions) Key() string {
-	return headers.HeaderXFrameOptions
-}
-func (i HeaderContentSecurityPolicy) Key() string {
-	return headers.HeaderContentSecurityPolicy
-}
-func (i HeaderXCSRFToken) Key() string {
-	return headers.HeaderXCSRFToken
-}
+
+// generated
+type (
+	HeaderAccept interface {
+		Value() string
+	}
+	HeaderAcceptEncoding interface {
+		Value() string
+	}
+	HeaderAllow interface {
+		Value() string
+	}
+	HeaderAuthorization interface {
+		Value() string
+	}
+	HeaderContentDisposition interface {
+		Value() string
+	}
+	HeaderContentEncoding interface {
+		Value() string
+	}
+	HeaderContentLength interface {
+		Value() string
+	}
+	HeaderContentType interface {
+		Value() string
+	}
+	HeaderCookie interface {
+		Value() string
+	}
+	HeaderSetCookie interface {
+		Value() string
+	}
+	HeaderIfModifiedSince interface {
+		Value() string
+	}
+	HeaderLastModified interface {
+		Value() string
+	}
+	HeaderLocation interface {
+		Value() string
+	}
+	HeaderUpgrade interface {
+		Value() string
+	}
+	HeaderVary interface {
+		Value() string
+	}
+	HeaderWWWAuthenticate interface {
+		Value() string
+	}
+	HeaderXForwardedFor interface {
+		Value() string
+	}
+	HeaderXForwardedProto interface {
+		Value() string
+	}
+	HeaderXForwardedProtocol interface {
+		Value() string
+	}
+	HeaderXForwardedSsl interface {
+		Value() string
+	}
+	HeaderXUrlScheme interface {
+		Value() string
+	}
+	HeaderXHTTPMethodOverride interface {
+		Value() string
+	}
+	HeaderXRealIP interface {
+		Value() string
+	}
+	HeaderXRequestID interface {
+		Value() string
+	}
+	HeaderServer interface {
+		Value() string
+	}
+	HeaderOrigin interface {
+		Value() string
+	}
+	// Access cinterface{
+	// Value(} string
+	HeaderAccessControlRequestMethod interface {
+		Value() string
+	}
+	HeaderAccessControlRequestHeaders interface {
+		Value() string
+	}
+	HeaderAccessControlAllowOrigin interface {
+		Value() string
+	}
+	HeaderAccessControlAllowMethods interface {
+		Value() string
+	}
+	HeaderAccessControlAllowHeaders interface {
+		Value() string
+	}
+	HeaderAccessControlAllowCredentials interface {
+		Value() string
+	}
+	HeaderAccessControlExposeHeaders interface {
+		Value() string
+	}
+	HeaderAccessControlMaxAge interface {
+		Value() string
+	}
+	// Security
+	HeaderStrictTransportSecurity interface {
+		Value() string
+	}
+	HeaderXContentTypeOptions interface {
+		Value() string
+	}
+	HeaderXXSSProtection interface {
+		Value() string
+	}
+	HeaderXFrameOptions interface {
+		Value() string
+	}
+	HeaderContentSecurityPolicy interface {
+		Value() string
+	}
+	HeaderXCSRFToken interface {
+		Value() string
+	}
+)
+
+var (
+	headerAccept              HeaderAccept
+	headerAcceptEncoding      HeaderAcceptEncoding
+	headerAllow               HeaderAllow
+	headerAuthorization       HeaderAuthorization
+	headerContentDisposition  HeaderContentDisposition
+	headerContentEncoding     HeaderContentEncoding
+	headerContentLength       HeaderContentLength
+	headerContentType         HeaderContentType
+	headerCookie              HeaderCookie
+	headerSetCookie           HeaderSetCookie
+	headerIfModifiedSince     HeaderIfModifiedSince
+	headerLastModified        HeaderLastModified
+	headerLocation            HeaderLocation
+	headerUpgrade             HeaderUpgrade
+	headerVary                HeaderVary
+	headerWWWAuthenticate     HeaderWWWAuthenticate
+	headerXForwardedFor       HeaderXForwardedFor
+	headerXForwardedProto     HeaderXForwardedProto
+	headerXForwardedProtocol  HeaderXForwardedProtocol
+	headerXForwardedSsl       HeaderXForwardedSsl
+	headerXUrlScheme          HeaderXUrlScheme
+	headerXHTTPMethodOverride HeaderXHTTPMethodOverride
+	headerXRealIP             HeaderXRealIP
+	headerXRequestID          HeaderXRequestID
+	headerServer              HeaderServer
+	headerOrigin              HeaderOrigin
+	// Access control
+	headerAccessControlRequestMethod    HeaderAccessControlRequestMethod
+	headerAccessControlRequestHeaders   HeaderAccessControlRequestHeaders
+	headerAccessControlAllowOrigin      HeaderAccessControlAllowOrigin
+	headerAccessControlAllowMethods     HeaderAccessControlAllowMethods
+	headerAccessControlAllowHeaders     HeaderAccessControlAllowHeaders
+	headerAccessControlAllowCredentials HeaderAccessControlAllowCredentials
+	headerAccessControlExposeHeaders    HeaderAccessControlExposeHeaders
+	headerAccessControlMaxAge           HeaderAccessControlMaxAge
+	// Security
+	headerStrictTransportSecurity HeaderStrictTransportSecurity
+	headerXContentTypeOptions     HeaderXContentTypeOptions
+	headerXXSSProtection          HeaderXXSSProtection
+	headerXFrameOptions           HeaderXFrameOptions
+	headerContentSecurityPolicy   HeaderContentSecurityPolicy
+	headerXCSRFToken              HeaderXCSRFToken
+)
+
+var (
+	HeaderAcceptType                        = reflect.TypeOf(headerAccept)
+	HeaderAcceptEncodingType                = reflect.TypeOf(headerAcceptEncoding)
+	HeaderAllowType                         = reflect.TypeOf(headerAllow)
+	HeaderAuthorizationType                 = reflect.TypeOf(headerAuthorization)
+	HeaderContentDispositionType            = reflect.TypeOf(headerContentDisposition)
+	HeaderContentEncodingType               = reflect.TypeOf(headerContentEncoding)
+	HeaderContentLengthType                 = reflect.TypeOf(headerContentLength)
+	HeaderContentTypeType                   = reflect.TypeOf(headerContentType)
+	HeaderCookieType                        = reflect.TypeOf(headerCookie)
+	HeaderSetCookieType                     = reflect.TypeOf(headerSetCookie)
+	HeaderIfModifiedSinceType               = reflect.TypeOf(headerIfModifiedSince)
+	HeaderLastModifiedType                  = reflect.TypeOf(headerLastModified)
+	HeaderLocationType                      = reflect.TypeOf(headerLocation)
+	HeaderUpgradeType                       = reflect.TypeOf(headerUpgrade)
+	HeaderVaryType                          = reflect.TypeOf(headerVary)
+	HeaderWWWAuthenticateType               = reflect.TypeOf(headerWWWAuthenticate)
+	HeaderXForwardedForType                 = reflect.TypeOf(headerXForwardedFor)
+	HeaderXForwardedProtoType               = reflect.TypeOf(headerXForwardedProto)
+	HeaderXForwardedProtocolType            = reflect.TypeOf(headerXForwardedProtocol)
+	HeaderXForwardedSslType                 = reflect.TypeOf(headerXForwardedSsl)
+	HeaderXUrlSchemeType                    = reflect.TypeOf(headerXUrlScheme)
+	HeaderXHTTPMethodOverrideType           = reflect.TypeOf(headerXHTTPMethodOverride)
+	HeaderXRealIPType                       = reflect.TypeOf(headerXRealIP)
+	HeaderXRequestIDType                    = reflect.TypeOf(headerXRequestID)
+	HeaderServerType                        = reflect.TypeOf(headerServer)
+	HeaderOriginType                        = reflect.TypeOf(headerOrigin)
+	HeaderAccessControlRequestMethodType    = reflect.TypeOf(headerAccessControlRequestMethod)
+	HeaderAccessControlRequestHeadersType   = reflect.TypeOf(headerAccessControlRequestHeaders)
+	HeaderAccessControlAllowOriginType      = reflect.TypeOf(headerAccessControlAllowOrigin)
+	HeaderAccessControlAllowMethodsType     = reflect.TypeOf(headerAccessControlAllowMethods)
+	HeaderAccessControlAllowHeadersType     = reflect.TypeOf(headerAccessControlAllowHeaders)
+	HeaderAccessControlAllowCredentialsType = reflect.TypeOf(headerAccessControlAllowCredentials)
+	HeaderAccessControlExposeHeadersType    = reflect.TypeOf(headerAccessControlExposeHeaders)
+	HeaderAccessControlMaxAgeType           = reflect.TypeOf(headerAccessControlMaxAge)
+	HeaderStrictTransportSecurityType       = reflect.TypeOf(headerStrictTransportSecurity)
+	HeaderXContentTypeOptionsType           = reflect.TypeOf(headerXContentTypeOptions)
+	HeaderXXSSProtectionType                = reflect.TypeOf(headerXXSSProtection)
+	HeaderXFrameOptionsType                 = reflect.TypeOf(headerXFrameOptions)
+	HeaderContentSecurityPolicyType         = reflect.TypeOf(headerContentSecurityPolicy)
+	HeaderXCSRFTokenType                    = reflect.TypeOf(headerXCSRFToken)
+
+	HeaderTable = map[reflect.Type]string{
+		HeaderAcceptType:                        headers.HeaderAccept,
+		HeaderAcceptEncodingType:                headers.HeaderAcceptEncoding,
+		HeaderAllowType:                         headers.HeaderAllow,
+		HeaderAuthorizationType:                 headers.HeaderAuthorization,
+		HeaderContentDispositionType:            headers.HeaderContentDisposition,
+		HeaderContentEncodingType:               headers.HeaderContentEncoding,
+		HeaderContentLengthType:                 headers.HeaderContentLength,
+		HeaderContentTypeType:                   headers.HeaderContentType,
+		HeaderCookieType:                        headers.HeaderCookie,
+		HeaderSetCookieType:                     headers.HeaderSetCookie,
+		HeaderIfModifiedSinceType:               headers.HeaderIfModifiedSince,
+		HeaderLastModifiedType:                  headers.HeaderLastModified,
+		HeaderLocationType:                      headers.HeaderLocation,
+		HeaderUpgradeType:                       headers.HeaderUpgrade,
+		HeaderVaryType:                          headers.HeaderVary,
+		HeaderWWWAuthenticateType:               headers.HeaderWWWAuthenticate,
+		HeaderXForwardedForType:                 headers.HeaderXForwardedFor,
+		HeaderXForwardedProtoType:               headers.HeaderXForwardedProto,
+		HeaderXForwardedProtocolType:            headers.HeaderXForwardedProtocol,
+		HeaderXForwardedSslType:                 headers.HeaderXForwardedSsl,
+		HeaderXUrlSchemeType:                    headers.HeaderXUrlScheme,
+		HeaderXHTTPMethodOverrideType:           headers.HeaderXHTTPMethodOverride,
+		HeaderXRealIPType:                       headers.HeaderXRealIP,
+		HeaderXRequestIDType:                    headers.HeaderXRequestID,
+		HeaderServerType:                        headers.HeaderServer,
+		HeaderOriginType:                        headers.HeaderOrigin,
+		HeaderAccessControlRequestMethodType:    headers.HeaderAccessControlRequestMethod,
+		HeaderAccessControlRequestHeadersType:   headers.HeaderAccessControlRequestHeaders,
+		HeaderAccessControlAllowOriginType:      headers.HeaderAccessControlAllowOrigin,
+		HeaderAccessControlAllowMethodsType:     headers.HeaderAccessControlAllowMethods,
+		HeaderAccessControlAllowHeadersType:     headers.HeaderAccessControlAllowHeaders,
+		HeaderAccessControlAllowCredentialsType: headers.HeaderAccessControlAllowCredentials,
+		HeaderAccessControlExposeHeadersType:    headers.HeaderAccessControlExposeHeaders,
+		HeaderAccessControlMaxAgeType:           headers.HeaderAccessControlMaxAge,
+		HeaderStrictTransportSecurityType:       headers.HeaderStrictTransportSecurity,
+		HeaderXContentTypeOptionsType:           headers.HeaderXContentTypeOptions,
+		HeaderXXSSProtectionType:                headers.HeaderXXSSProtection,
+		HeaderXFrameOptionsType:                 headers.HeaderXFrameOptions,
+		HeaderContentSecurityPolicyType:         headers.HeaderContentSecurityPolicy,
+		HeaderXCSRFTokenType:                    headers.HeaderXCSRFToken,
+	}
+)

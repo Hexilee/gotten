@@ -2,6 +2,7 @@ package gotten
 
 import (
 	"errors"
+	"fmt"
 	"reflect"
 )
 
@@ -14,6 +15,11 @@ const (
 	ValueIsNotStringer         = "value is not a stringer"
 	ValueIsNotString           = "value is not a string"
 	ValueIsNotInt              = "value is not a int"
+	DuplicatedPathKey          = "duplicated path key"
+	UnrecognizedFieldType      = "field type is unrecognized"
+	UnrecognizedPathKey        = "path key is unrecognized"
+	EmptyPathVariable          = "path variable is empty"
+	UnsupportedFieldType       = "field type is unsupported"
 )
 
 func MustPassPtrToImplError(p reflect.Type) error {
@@ -42,4 +48,24 @@ func ValueIsNotStringError(p reflect.Type) error {
 
 func ValueIsNotIntError(p reflect.Type) error {
 	return errors.New(ValueIsNotInt + ": " + p.String())
+}
+
+func DuplicatedPathKeyError(key string) error {
+	return errors.New(DuplicatedPathKey + ": " + key)
+}
+
+func UnrecognizedFieldTypeError(fieldType string) error {
+	return errors.New(UnrecognizedFieldType + ": " + fieldType)
+}
+
+func UnrecognizedPathKeyError(key string) error {
+	return errors.New(UnrecognizedPathKey + ": " + key)
+}
+
+func EmptyPathVariableError(key string) error {
+	return errors.New(EmptyPathVariable + ": " + key)
+}
+
+func UnsupportedFieldTypeError(fieldType reflect.Type, valueType string) error {
+	return errors.New(fmt.Sprintf(UnrecognizedFieldType+": %s -> %s", fieldType, valueType))
 }

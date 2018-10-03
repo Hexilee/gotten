@@ -43,6 +43,7 @@ func TestPathKeyList(t *testing.T) {
 }
 
 func TestPathKeyRegexp(t *testing.T) {
+	assert.NotNil(t, pathKeyRegexp)
 	// find
 	for _, testCase := range []struct {
 		Src    string
@@ -62,5 +63,20 @@ func TestPathKeyRegexp(t *testing.T) {
 		for i := range result {
 			assert.Equal(t, testCase.Result[i], result[i])
 		}
+	}
+}
+
+func TestFieldExportable(t *testing.T) {
+	for _, testCase := range []struct{
+		name string
+		exportable bool
+	} {
+		{"Name", true},
+		{"N", true},
+		{"nAME", false},
+		{"name", false},
+		{"n", false},
+	} {
+		assert.Equal(t, testCase.exportable, fieldExportable(testCase.name))
 	}
 }
