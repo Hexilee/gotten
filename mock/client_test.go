@@ -23,8 +23,8 @@ func (WorldHandler) ServeHTTP(w http.ResponseWriter, _ *http.Request) {
 
 func TestClientImpl_Do(t *testing.T) {
 	clientBuilder := NewClientBuilder()
-	clientBuilder.registerFunc("hello.me", HelloHandlerFunc)
-	clientBuilder.register("world.me", WorldHandler{})
+	clientBuilder.RegisterFunc("hello.me", HelloHandlerFunc)
+	clientBuilder.Register("world.me", WorldHandler{})
 	client := clientBuilder.Build()
 
 	helloReq, err := http.NewRequest(http.MethodGet, "https://hello.me", nil)

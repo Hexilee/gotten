@@ -170,7 +170,7 @@ func (parser *VarsParser) parse(paramType reflect.Type) (err error) {
 						if err != nil {
 							break FieldCycle
 						}
-						// TODO: TypeHeader
+						// TODO: TypeCookie
 					case TypeJSON:
 					case TypeMultipart:
 					case TypeXML:

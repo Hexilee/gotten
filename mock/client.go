@@ -29,11 +29,11 @@ func NewClientBuilder() *ClientBuilder {
 }
 
 // base: host or host:port
-func (builder *ClientBuilder) register(base string, handler http.Handler) {
+func (builder *ClientBuilder) Register(base string, handler http.Handler) {
 	builder.services[base] = handler
 }
 
-func (builder *ClientBuilder) registerFunc(base string, handler http.HandlerFunc) {
+func (builder *ClientBuilder) RegisterFunc(base string, handler http.HandlerFunc) {
 	builder.services[base] = handler
 }
 

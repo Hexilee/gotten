@@ -198,7 +198,7 @@ func (creator *Creator) Impl(service interface{}) (err error) {
 								return
 							}
 
-							fmt.Println(body)
+							fmt.Println(string(body))
 							// TODO: deal body
 							return
 						}
