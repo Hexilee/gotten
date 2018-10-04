@@ -28,7 +28,7 @@ type (
 
 	ConditionalUnmarshaler struct {
 		Checker
-		Unmarshaler
+		ReaderUnmarshaler
 	}
 )
 
@@ -66,12 +66,20 @@ func (builder *Builder) AddHeader(key, value string) *Builder {
 }
 
 func (builder *Builder) AddUnmarshaler(unmarshaler Unmarshaler, checker Checker) *Builder {
-	builder.unmarshalers = append(builder.unmarshalers, &ConditionalUnmarshaler{checker, unmarshaler})
-	return builder
+	return builder.AddReaderUnmarshaler(NewReaderAdapter(unmarshaler), checker)
 }
 
 func (builder *Builder) AddUnmarshalFunc(unmarshaler UnmarshalFunc, checker Checker) *Builder {
 	return builder.AddUnmarshaler(unmarshaler, checker)
+}
+
+func (builder *Builder) AddReaderUnmarshaler(unmarshaler ReaderUnmarshaler, checker Checker) *Builder {
+	builder.unmarshalers = append(builder.unmarshalers, &ConditionalUnmarshaler{checker, unmarshaler})
+	return builder
+}
+
+func (builder *Builder) AddReaderUnmarshalerFunc(unmarshaler ReaderUnmarshalerFunc, checker Checker) *Builder {
+	return builder.AddReaderUnmarshaler(unmarshaler, checker)
 }
 
 func (builder *Builder) SetClient(client Client) *Builder {
