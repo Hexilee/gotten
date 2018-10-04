@@ -23,7 +23,7 @@ var (
 )
 
 type (
-	VarsConstructor interface {
+	VarsController interface {
 		setValues(value reflect.Value) error
 		getUrl() (*url.URL, error)
 	}
@@ -189,7 +189,7 @@ func (parser *VarsParser) parse(paramType reflect.Type) (err error) {
 	return
 }
 
-func (parser *VarsParser) Builder() VarsConstructor {
+func (parser *VarsParser) Builder() VarsController {
 	return &VarsCtr{
 		regex:       parser.regex,
 		path:        parser.path,

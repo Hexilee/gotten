@@ -6,12 +6,12 @@ import (
 
 type (
 	UrlCtr struct {
-		vars VarsConstructor
+		vars VarsController
 		base *url.URL
 	}
 )
 
-func newUrlCtr(base *url.URL, vars VarsConstructor) *UrlCtr {
+func newUrlCtr(base *url.URL, vars VarsController) *UrlCtr {
 	return &UrlCtr{
 		vars: vars,
 		base: base,
