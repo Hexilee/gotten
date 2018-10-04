@@ -71,7 +71,7 @@ var (
 	StringType   = reflect.TypeOf("")
 )
 
-// for TypePath, TypeQuery and TypeForm
+// for TypePath, TypeQuery, TypeHeader and TypeForm
 func FirstValueGetterFunc(fieldType reflect.Type, valueType string) (getValueFunc func(value reflect.Value) string, err error) {
 	switch fieldType {
 	case IntType:

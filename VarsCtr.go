@@ -163,18 +163,20 @@ func (parser *VarsParser) parse(paramType reflect.Type) (err error) {
 						fallthrough
 					case TypeQuery:
 						fallthrough
+					case TypeHeader:
+						fallthrough
 					case TypeForm:
 						parser.fieldTables[i].getValueFunc, err = FirstValueGetterFunc(fieldType, TypePath)
 						if err != nil {
 							break FieldCycle
 						}
 						// TODO: TypeHeader
-					case TypeHeader:
 					case TypeJSON:
 					case TypeMultipart:
 					case TypeXML:
 					default:
 						err = UnrecognizedFieldTypeError(fieldTag.Get(KeyType))
+						break FieldCycle
 					}
 				}
 			}
