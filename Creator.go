@@ -2,6 +2,8 @@ package gotten
 
 import (
 	"errors"
+	"fmt"
+	"io/ioutil"
 	"net/http"
 	"net/url"
 	"reflect"
@@ -115,6 +117,7 @@ func (creator *Creator) Impl(service interface{}) (err error) {
 		}
 
 		if err == nil {
+		FieldCycle:
 			for i := 0; i < serviceType.NumField(); i++ {
 				field := serviceType.Field(i)
 				fieldType := field.Type
@@ -124,11 +127,21 @@ func (creator *Creator) Impl(service interface{}) (err error) {
 					fieldValue.CanSet() &&
 					fieldType.NumIn() == 1 &&
 					fieldType.NumOut() == 2 &&
-					fieldType.Out(1) == reflect.TypeOf(errors.New("")) {
+					fieldType.Out(1) == ErrorType {
+					paramsType := fieldType.In(0)
+					varsParser, parseErr := newVarsParser(fieldTag.Get(KeyPath))
+					if err = parseErr; err != nil {
+						break FieldCycle
+					}
+
+					err = varsParser.parse(paramsType)
+					if err != nil {
+						break FieldCycle
+					}
+
 					method := fieldTag.Get(KeyMethod)
 					switch method {
-					case "":
-						method = http.MethodGet
+					case "": // "" means "GET" in standard library
 						fallthrough
 					case http.MethodGet:
 						fallthrough
@@ -147,13 +160,52 @@ func (creator *Creator) Impl(service interface{}) (err error) {
 					case http.MethodOptions:
 						fallthrough
 					case http.MethodTrace:
-						rawFunc := func([]reflect.Value) []reflect.Value {
+						rawFunc := func(values []reflect.Value) (results []reflect.Value) {
+							results = make([]reflect.Value, 2)
+							varsCtr := varsParser.Build()
+							setValuesErr := varsCtr.setValues(values[0])
 
-							return []reflect.Value{}
+							if setValuesErr != nil {
+								results[1] = reflect.ValueOf(setValuesErr)
+								return
+							}
+
+							finalUrl, err := newUrlCtr(creator.baseUrl, varsCtr).getUrl()
+							if err != nil {
+								results[1] = reflect.ValueOf(err)
+								return
+							}
+
+							// TODO: add body
+							req, err := http.NewRequest(method, finalUrl.String(), nil)
+							if err != nil {
+								results[1] = reflect.ValueOf(err)
+								return
+							}
+
+							resp, err := creator.client.Do(req)
+
+							if err != nil {
+								results[1] = reflect.ValueOf(err)
+								return
+							}
+
+							defer resp.Body.Close()
+
+							body, err := ioutil.ReadAll(resp.Body)
+							if err != nil {
+								results[1] = reflect.ValueOf(err)
+								return
+							}
+
+							fmt.Println(body)
+							// TODO: deal body
+							return
 						}
 						fieldValue.Set(reflect.MakeFunc(fieldType, rawFunc))
 					default:
 						err = UnrecognizedHTTPMethodError(method)
+						break FieldCycle
 					}
 				}
 			}

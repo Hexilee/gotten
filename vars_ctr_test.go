@@ -124,7 +124,7 @@ func TestVarsParser(t *testing.T) {
 			Num:    10,
 		}, `/post/2018/1/1/1`, `num=10&page=1`},
 	} {
-		ctr := parser.Builder()
+		ctr := parser.Build()
 		assert.Nil(t, ctr.setValues(reflect.ValueOf(testCase.params)))
 		result, err := ctr.getUrl()
 		assert.Nil(t, err)

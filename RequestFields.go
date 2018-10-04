@@ -1,8 +1,6 @@
 package gotten
 
 import (
-	"fmt"
-	"io"
 	"reflect"
 )
 
@@ -53,19 +51,11 @@ type (
 	//
 	//	PartReader io.Reader
 	//
-
-	Types struct {
-		stringer fmt.Stringer
-		reader   io.Reader
-	}
 )
 
 //
 var (
-	types        = Types{}
 	partFile     = PartFile("")
-	StringerType = reflect.ValueOf(types).FieldByName("stringer").Type()
-	ReaderType   = reflect.ValueOf(types).FieldByName("reader").Type()
 	PartFileType = reflect.TypeOf(partFile)
 	IntType      = reflect.TypeOf(int(1))
 	StringType   = reflect.TypeOf("")

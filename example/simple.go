@@ -8,14 +8,14 @@ import (
 
 type (
 	SimpleParams struct {
-		Id   gotten.PathInt
-		Page gotten.QueryInt
+		Id   int
+		Page int
 	}
 
 	SimpleResult struct {
-		Status       gotten.StatusCode `expect:"200"`
-		ExpectResult ExpectResult      `expect:"200"`
-		BadResult    ObjectNotFound    `expect:"404"`
+		Status       gotten.Status  `expect:"200"`
+		ExpectResult ExpectResult   `expect:"200"`
+		BadResult    ObjectNotFound `expect:"404"`
 	}
 
 	Item struct {
@@ -38,7 +38,7 @@ type (
 )
 
 var (
-	creator = gotten.NewBuilder().
+	creator, err = gotten.NewBuilder().
 		SetBaseUrl("https://api.sample.com").
 		AddCookie(&http.Cookie{Name: "clientcookieid", Value: "121", Expires: time.Now().Add(111 * time.Second)}).
 		Build()

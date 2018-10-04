@@ -189,7 +189,7 @@ func (parser *VarsParser) parse(paramType reflect.Type) (err error) {
 	return
 }
 
-func (parser *VarsParser) Builder() VarsController {
+func (parser *VarsParser) Build() VarsController {
 	return &VarsCtr{
 		regex:       parser.regex,
 		path:        parser.path,
