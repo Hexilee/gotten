@@ -6,6 +6,7 @@ import (
 	"errors"
 	"github.com/Hexilee/gotten/headers"
 	"github.com/Hexilee/unhtml"
+	"io"
 	"net/http"
 	"net/url"
 	"reflect"
@@ -222,10 +223,32 @@ func (creator *Creator) Impl(service interface{}) (err error) {
 								return results
 							}
 
-							req, err := http.NewRequest(method, finalUrl.String(), nil)
+							var body io.Reader
+							contentType := varsCtr.getContentType()
+
+							if contentType != ZeroStr {
+								body, err = varsCtr.getBody()
+								if err != nil {
+									results[1].Set(reflect.ValueOf(err).Convert(ErrorType))
+									return results
+								}
+							}
+
+							req, err := http.NewRequest(method, finalUrl.String(), body)
 							if err != nil {
 								results[1].Set(reflect.ValueOf(err).Convert(ErrorType))
 								return results
+							}
+
+							header := varsCtr.getHeader()
+							for key, values := range header {
+								for _, value := range values {
+									req.Header.Add(key, value)
+								}
+							}
+
+							if contentType != ZeroStr {
+								req.Header.Set(headers.HeaderContentType, varsCtr.getContentType())
 							}
 
 							resp, err := creator.client.Do(req)
