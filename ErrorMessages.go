@@ -18,7 +18,7 @@ const (
 	ValueIsNotString              = "value is not a string"
 	ValueIsNotInt                 = "value is not a int"
 	DuplicatedPathKey             = "duplicated path key"
-	UnrecognizedFieldType         = "field type is unrecognized"
+	UnsupportedValueType          = "field type is unrecognized"
 	UnrecognizedPathKey           = "path key is unrecognized"
 	EmptyRequiredVariable         = "required variable is empty"
 	UnsupportedFieldType          = "field type is unsupported"
@@ -59,8 +59,8 @@ func DuplicatedPathKeyError(key string) error {
 	return errors.New(DuplicatedPathKey + ": " + key)
 }
 
-func UnrecognizedFieldTypeError(fieldType string) error {
-	return errors.New(UnrecognizedFieldType + ": " + fieldType)
+func UnsupportedValueTypeError(valueType string) error {
+	return errors.New(UnsupportedValueType + ": " + valueType)
 }
 
 func UnrecognizedPathKeyError(key string) error {

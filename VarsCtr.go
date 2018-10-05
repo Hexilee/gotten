@@ -5,7 +5,8 @@ import (
 	"github.com/Hexilee/gotten/headers"
 	"github.com/iancoleman/strcase"
 	"io"
-	"mime/multipart"
+	"io/ioutil"
+	"net/http"
 	"net/url"
 	"reflect"
 	"regexp"
@@ -41,16 +42,19 @@ type (
 	}
 
 	VarsCtr struct {
-		regex        *regexp.Regexp
-		path         string
-		contentType  string
-		fieldTable   []*Field
-		ioFieldTable []*IOField
-		pathValues   map[string]string
-		queryValues  url.Values
-		formValues   url.Values
-		body         io.ReadWriter
-		writer       *multipart.Writer
+		regex            *regexp.Regexp
+		path             string
+		contentType      string
+		fieldTable       []*Field
+		ioFieldTable     []*IOField
+		pathValues       map[string]string
+		queryValues      url.Values
+		formValues       url.Values
+		multipartValues  map[string]string
+		multipartFiles   map[string]string
+		multipartReaders map[string]MultipartReader
+		header           http.Header
+		body             io.Reader
 	}
 
 	// TypePath, TypeQuery, TypeForm, TypeHeader, TypeCookie, TypeMultipart(except io.Reader)
@@ -60,17 +64,24 @@ type (
 		defaultValue string
 		valueType    string
 		require      bool
+		// can only called by getValue
 		getValueFunc func(value reflect.Value) (string, error)
 	}
 
 	// TypeJSON, TypeXML, TypeMultipart(io.Reader)
 	IOField struct {
-		key           string
-		name          string
-		defaultValue  string
-		valueType     string
-		require       bool
+		key          string
+		name         string
+		defaultValue string
+		valueType    string
+		require      bool
+		// can only called by getValue
 		getReaderFunc func(value reflect.Value) (Reader, error)
+	}
+
+	MultipartReader struct {
+		reader io.Reader
+		header http.Header
 	}
 
 	PathKeyList map[string]bool
@@ -113,7 +124,7 @@ func (field Field) getValue(value reflect.Value) (val string, err error) {
 func (field IOField) getValue(value reflect.Value) (val Reader, err error) {
 	val, err = field.getReaderFunc(value)
 	if err == nil && val.Empty() {
-		val = newReader(bytes.NewBufferString(field.defaultValue), !field.hasDefaultValue())
+		val = newReadCloser(bytes.NewBufferString(field.defaultValue), !field.hasDefaultValue())
 		if val.Empty() && field.require {
 			err = EmptyRequiredVariableError(field.name)
 		}
@@ -261,7 +272,7 @@ func (parser *VarsParser) parse(paramType reflect.Type) (err error) {
 						}
 					}
 				default:
-					err = UnrecognizedFieldTypeError(field.Tag.Get(KeyType))
+					err = UnsupportedValueTypeError(valueType)
 				}
 				if err != nil {
 					break
@@ -347,11 +358,16 @@ func (parser *VarsParser) Build() VarsController {
 		ioFieldTable: parser.ioFieldTable,
 		pathValues:   make(map[string]string),
 		queryValues:  make(url.Values),
+		header:       make(http.Header),
+	}
+
+	if varsCtr.contentType != ZeroStr {
+		varsCtr.body = bytes.NewBuffer(make([]byte, 0))
 	}
 
 	if varsCtr.contentType == headers.MIMEMultipartForm {
-		varsCtr.body = bytes.NewBuffer(make([]byte, 0))
-		varsCtr.writer = multipart.NewWriter(varsCtr.body)
+		varsCtr.multipartValues = make(map[string]string)
+		varsCtr.multipartReaders = make(map[string]MultipartReader)
 	}
 
 	if varsCtr.contentType == headers.MIMEApplicationForm {
@@ -381,27 +397,113 @@ func (varsCtr VarsCtr) getMultipartBody() (body io.ReadWriter, err error) {
 	return
 }
 
-func (varsCtr *VarsCtr) setValues(ptr reflect.Value) (err error) {
-	value := ptr.Elem()
-RangeCycle:
+func (varsCtr *VarsCtr) setValuesByFields(value reflect.Value) (err error) {
 	for i, field := range varsCtr.fieldTable {
 		if field != nil {
 			fieldValue := value.Field(i)
+			var val string
 			switch field.valueType {
 			case TypePath:
 				varsCtr.pathValues[field.key], err = field.getValue(fieldValue)
-				if err != nil {
-					break RangeCycle
-				}
 			case TypeQuery:
-				val := ""
 				val, err = field.getValue(fieldValue)
-				if err != nil {
-					break RangeCycle
+				if err == nil {
+					varsCtr.queryValues.Add(field.key, val)
 				}
-				varsCtr.queryValues.Add(field.key, val)
+			case TypeHeader:
+				val, err = field.getValue(fieldValue)
+				if err == nil {
+					varsCtr.header.Add(field.key, val)
+				}
+			case TypeForm:
+				val, err = field.getValue(fieldValue)
+				if err == nil {
+					varsCtr.formValues.Add(field.key, val)
+				}
+			case TypeMultipart:
+				// TODO: add file support
+				varsCtr.multipartValues[field.key], err = field.getValue(fieldValue)
+			default:
+				panic(UnsupportedValueTypeError(field.valueType))
+			}
+			if err != nil {
+				break
 			}
 		}
+	}
+	return
+}
+
+func (varsCtr *VarsCtr) setValuesByIOFields(value reflect.Value) (err error) {
+	for i, field := range varsCtr.ioFieldTable {
+		if field != nil {
+			fieldValue := value.Field(i)
+			var reader Reader
+			switch field.valueType {
+			case TypeJSON:
+				switch varsCtr.contentType {
+				case headers.MIMEApplicationJSONCharsetUTF8:
+					reader, err = field.getValue(fieldValue)
+					varsCtr.body = reader
+				case headers.MIMEApplicationForm:
+					var data []byte
+					if err == nil && !reader.Empty() {
+						data, err = ioutil.ReadAll(reader)
+						varsCtr.formValues.Add(field.key, string(data))
+					}
+				case headers.MIMEMultipartForm:
+					header := make(http.Header)
+					header.Add(headers.HeaderContentType, headers.MIMEApplicationJavaScriptCharsetUTF8)
+					reader, err = field.getValue(fieldValue)
+					varsCtr.multipartReaders[field.key] = MultipartReader{reader, header}
+				default:
+					panic("Unsupported content type: " + varsCtr.contentType)
+				}
+			case TypeXML:
+				switch varsCtr.contentType {
+				case headers.MIMEApplicationXMLCharsetUTF8:
+					reader, err = field.getValue(fieldValue)
+					varsCtr.body = reader
+				case headers.MIMEApplicationForm:
+					var data []byte
+					if err == nil && !reader.Empty() {
+						data, err = ioutil.ReadAll(reader)
+						varsCtr.formValues.Add(field.key, string(data))
+					}
+				case headers.MIMEMultipartForm:
+					header := make(http.Header)
+					header.Add(headers.HeaderContentType, headers.MIMEApplicationXMLCharsetUTF8)
+					reader, err = field.getValue(fieldValue)
+					varsCtr.multipartReaders[field.key] = MultipartReader{reader, header}
+				default:
+					panic("Unsupported content type: " + varsCtr.contentType)
+				}
+			case TypeMultipart:
+				switch varsCtr.contentType {
+				case headers.MIMEMultipartForm:
+					header := make(http.Header)
+					header.Add(headers.HeaderContentType, headers.MIMEOctetStream)
+					reader, err = field.getValue(fieldValue)
+					varsCtr.multipartReaders[field.key] = MultipartReader{reader, header}
+				default:
+					panic("Unsupported content type: " + varsCtr.contentType)
+				}
+			default:
+				panic(UnsupportedValueTypeError(field.valueType))
+			}
+			if err != nil {
+				break
+			}
+		}
+	}
+	return
+}
+
+func (varsCtr *VarsCtr) setValues(ptr reflect.Value) (err error) {
+	value := ptr.Elem()
+	err = varsCtr.setValuesByFields(value)
+	if err == nil {
+		err = varsCtr.setValuesByIOFields(value)
 	}
 	return
 }

@@ -10,6 +10,7 @@ import (
 	"strconv"
 )
 
+// value types
 const (
 	// support types: fmt.Stringer, int, string
 	TypeHeader = "header"
@@ -133,7 +134,7 @@ func getXMLReaderGetterFunc(fieldType reflect.Type, valueType string) (getValueF
 func getMarshalReaderGetterFunc(marshalFunc func(obj interface{}) ([]byte, error)) func(value reflect.Value) (Reader, error) {
 	return func(value reflect.Value) (Reader, error) {
 		data, err := marshalFunc(value)
-		return newReader(bytes.NewBuffer(data), false), err
+		return newReadCloser(bytes.NewBuffer(data), false), err
 	}
 }
 
@@ -183,7 +184,7 @@ func getReaderFromStringer(value reflect.Value) (reader Reader, err error) {
 	}
 
 	str := stringer.String()
-	reader = newReader(bytes.NewBufferString(str), str == ZeroStr)
+	reader = newReadCloser(bytes.NewBufferString(str), str == ZeroStr)
 	return
 }
 
@@ -192,7 +193,7 @@ func getReaderFromString(value reflect.Value) (reader Reader, err error) {
 	if !ok {
 		panic(ValueIsNotStringError(value.Type()))
 	}
-	reader = newReader(bytes.NewBufferString(val), val == ZeroStr)
+	reader = newReadCloser(bytes.NewBufferString(val), val == ZeroStr)
 	return
 }
 
@@ -202,7 +203,7 @@ func getReaderFromInt(value reflect.Value) (reader Reader, err error) {
 		panic(ValueIsNotIntError(value.Type()))
 	}
 
-	reader = newReader(bytes.NewBufferString(strconv.Itoa(val)), val == ZeroInt)
+	reader = newReadCloser(bytes.NewBufferString(strconv.Itoa(val)), val == ZeroInt)
 	return
 }
 
@@ -212,6 +213,6 @@ func getReaderFromReader(value reflect.Value) (reader Reader, err error) {
 		panic(value.Type().String() + " is not a Reader")
 	}
 
-	reader = newReader(ioReader, value.IsNil())
+	reader = newReadCloser(ioReader, value.IsNil())
 	return
 }
