@@ -1,8 +1,10 @@
 package gotten_test
 
 import (
+	"encoding/json"
 	"github.com/Hexilee/gotten"
 	"github.com/stretchr/testify/assert"
+	"net/http"
 	"testing"
 )
 
@@ -30,5 +32,14 @@ func TestCreator_Impl(t *testing.T) {
 	service := new(SampleService)
 	assert.Nil(t, creator.Impl(service))
 	assert.NotNil(t, service.Get)
-	service.Get(&GetParams{2018, 10, 1, 1, 10})
+	resp, err := service.Get(&GetParams{2018, 10, 1, 1, 10})
+	assert.Nil(t, err)
+	assert.Equal(t, http.StatusOK, resp.StatusCode())
+
+	results := make([]TestPost, 0)
+	assert.Nil(t, resp.Unmarshal(&results))
+
+	data, err := json.Marshal(&results)
+	assert.Nil(t, err)
+	assert.Equal(t, "[{\"author\":\"Hexilee\",\"title\":\"Start!\",\"content\":\"Hello world!\"}]", string(data))
 }

@@ -12,12 +12,6 @@ type (
 		Page int
 	}
 
-	SimpleResult struct {
-		Status       gotten.Status  `expect:"200"`
-		ExpectResult ExpectResult   `expect:"200"`
-		BadResult    ObjectNotFound `expect:"404"`
-	}
-
 	Item struct {
 		TypeId      int
 		IId         int
@@ -33,7 +27,7 @@ type (
 	}
 
 	SimpleService struct {
-		GetItems func(SimpleParams) (SimpleResult, error) `method:"GET";path:"itemType/{id}"`
+		GetItems func(SimpleParams) (gotten.Response, error) `method:"GET";path:"itemType/{id}"`
 	}
 )
 

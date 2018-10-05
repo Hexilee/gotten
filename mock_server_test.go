@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/Hexilee/gotten"
+	"github.com/Hexilee/gotten/headers"
 	"github.com/Hexilee/gotten/mock"
 	"github.com/go-chi/chi"
 	"net/http"
@@ -46,6 +47,7 @@ func getPost(w http.ResponseWriter, r *http.Request) {
 	}
 	posts := database.Get(year, month, day, page, limit)
 	result, _ := json.Marshal(&posts)
+	w.Header().Set(headers.HeaderContentType, headers.MIMEApplicationJSONCharsetUTF8)
 	w.Write(result)
 }
 

@@ -204,41 +204,44 @@ func (creator *Creator) Impl(service interface{}) (err error) {
 						fallthrough
 					case http.MethodTrace:
 						rawFunc := func(values []reflect.Value) []reflect.Value {
-							results := make([]reflect.Value, 2, 2)
+							results := []reflect.Value{
+								reflect.New(ResponseType).Elem(),
+								reflect.New(ErrorType).Elem(),
+							}
 							varsCtr := varsParser.Build()
 							setValuesErr := varsCtr.setValues(values[0])
 
 							if setValuesErr != nil {
-								results[1] = reflect.ValueOf(setValuesErr)
+								results[1].Set(reflect.ValueOf(setValuesErr).Convert(ErrorType))
 								return results
 							}
 
 							finalUrl, err := newUrlCtr(creator.baseUrl, varsCtr).getUrl()
 							if err != nil {
-								results[1] = reflect.ValueOf(err)
+								results[1].Set(reflect.ValueOf(err).Convert(ErrorType))
 								return results
 							}
 
 							req, err := http.NewRequest(method, finalUrl.String(), nil)
 							if err != nil {
-								results[1] = reflect.ValueOf(err)
+								results[1].Set(reflect.ValueOf(err).Convert(ErrorType))
 								return results
 							}
 
 							resp, err := creator.client.Do(req)
 
 							if err != nil {
-								results[1] = reflect.ValueOf(err)
+								results[1].Set(reflect.ValueOf(err).Convert(ErrorType))
 								return results
 							}
 
 							readUnmarshaler, exist := creator.unmarshalers.Check(resp)
 							if !exist {
-								results[1] = reflect.ValueOf(NoUnmarshalerFoundForResponseError(resp))
+								results[1].Set(reflect.ValueOf(NoUnmarshalerFoundForResponseError(resp)).Convert(ErrorType))
 								return results
 							}
 
-							results[0] = reflect.ValueOf(newResponse(resp, readUnmarshaler))
+							results[0].Set(reflect.ValueOf(newResponse(resp, readUnmarshaler)).Convert(ResponseType))
 							return results
 						}
 						fieldValue.Set(reflect.MakeFunc(fieldType, rawFunc))
