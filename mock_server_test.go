@@ -8,6 +8,7 @@ import (
 	"github.com/Hexilee/gotten/headers"
 	"github.com/Hexilee/gotten/mock"
 	"github.com/go-chi/chi"
+	"io/ioutil"
 	"net/http"
 	"strconv"
 )
@@ -48,11 +49,39 @@ func getPost(w http.ResponseWriter, r *http.Request) {
 	posts := database.Get(year, month, day, page, limit)
 	result, _ := json.Marshal(&posts)
 	w.Header().Set(headers.HeaderContentType, headers.MIMEApplicationJSONCharsetUTF8)
+	w.WriteHeader(http.StatusOK)
 	w.Write(result)
 }
 
 func addPost(w http.ResponseWriter, r *http.Request) {
+	var result AddedData
+	defer func() {
+		w.Header().Set(headers.HeaderContentType, headers.MIMEApplicationJSONCharsetUTF8)
+		w.WriteHeader(http.StatusCreated)
+		respData, _ := json.Marshal(&result)
+		w.Write(respData)
+	}()
 
+	year, _ := strconv.Atoi(chi.URLParam(r, "year"))
+	month, _ := strconv.Atoi(chi.URLParam(r, "month"))
+	day, _ := strconv.Atoi(chi.URLParam(r, "day"))
+
+	body := r.Body
+	defer body.Close()
+	data, err := ioutil.ReadAll(body)
+	if err != nil {
+		result.Success = false
+		return
+	}
+
+	var post TestPost
+	err = json.Unmarshal(data, &post)
+	if err != nil {
+		result.Success = false
+		return
+	}
+
+	result = *database.Add(year, month, day, &post)
 }
 
 type (

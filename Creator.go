@@ -158,7 +158,6 @@ func (creator *Creator) Impl(service interface{}) (err error) {
 		}
 
 		if err == nil {
-		FieldCycle:
 			for i := 0; i < serviceType.NumField(); i++ {
 				field := serviceType.Field(i)
 				fieldType := field.Type
@@ -172,105 +171,104 @@ func (creator *Creator) Impl(service interface{}) (err error) {
 					fieldType.Out(1) == ErrorType {
 					paramsType := fieldType.In(0)
 					varsParser, parseErr := newVarsParser(fieldTag.Get(KeyPath))
-					if err = parseErr; err != nil {
-						break FieldCycle
-					}
+					if err = parseErr; err == nil {
+						err = varsParser.parse(paramsType)
+						if err == nil {
+							method := fieldTag.Get(KeyMethod)
 
-					err = varsParser.parse(paramsType)
-					if err != nil {
-						break FieldCycle
-					}
+							// TODO: add body check for different methods
+							switch method {
+							case "": // "" means "GET" in standard library
+								fallthrough
+							case http.MethodGet:
+								fallthrough
+							case http.MethodHead:
+								fallthrough
+							case http.MethodPost:
+								fallthrough
+							case http.MethodPut:
+								fallthrough
+							case http.MethodPatch:
+								fallthrough
+							case http.MethodDelete:
+								fallthrough
+							case http.MethodConnect:
+								fallthrough
+							case http.MethodOptions:
+								fallthrough
+							case http.MethodTrace:
+								rawFunc := func(values []reflect.Value) []reflect.Value {
+									results := []reflect.Value{
+										reflect.New(ResponseType).Elem(),
+										reflect.New(ErrorType).Elem(),
+									}
+									varsCtr := varsParser.Build()
+									setValuesErr := varsCtr.setValues(values[0])
 
-					method := fieldTag.Get(KeyMethod)
+									if setValuesErr != nil {
+										results[1].Set(reflect.ValueOf(setValuesErr).Convert(ErrorType))
+										return results
+									}
 
-					// TODO: add body check for different methods
-					switch method {
-					case "": // "" means "GET" in standard library
-						fallthrough
-					case http.MethodGet:
-						fallthrough
-					case http.MethodHead:
-						fallthrough
-					case http.MethodPost:
-						fallthrough
-					case http.MethodPut:
-						fallthrough
-					case http.MethodPatch:
-						fallthrough
-					case http.MethodDelete:
-						fallthrough
-					case http.MethodConnect:
-						fallthrough
-					case http.MethodOptions:
-						fallthrough
-					case http.MethodTrace:
-						rawFunc := func(values []reflect.Value) []reflect.Value {
-							results := []reflect.Value{
-								reflect.New(ResponseType).Elem(),
-								reflect.New(ErrorType).Elem(),
-							}
-							varsCtr := varsParser.Build()
-							setValuesErr := varsCtr.setValues(values[0])
+									finalUrl, err := newUrlCtr(creator.baseUrl, varsCtr).getUrl()
+									if err != nil {
+										results[1].Set(reflect.ValueOf(err).Convert(ErrorType))
+										return results
+									}
 
-							if setValuesErr != nil {
-								results[1].Set(reflect.ValueOf(setValuesErr).Convert(ErrorType))
-								return results
-							}
+									var body io.Reader
+									contentType := varsCtr.getContentType()
 
-							finalUrl, err := newUrlCtr(creator.baseUrl, varsCtr).getUrl()
-							if err != nil {
-								results[1].Set(reflect.ValueOf(err).Convert(ErrorType))
-								return results
-							}
+									if contentType != ZeroStr {
+										body, err = varsCtr.getBody()
+										if err != nil {
+											results[1].Set(reflect.ValueOf(err).Convert(ErrorType))
+											return results
+										}
+									}
 
-							var body io.Reader
-							contentType := varsCtr.getContentType()
+									req, err := http.NewRequest(method, finalUrl.String(), body)
+									if err != nil {
+										results[1].Set(reflect.ValueOf(err).Convert(ErrorType))
+										return results
+									}
 
-							if contentType != ZeroStr {
-								body, err = varsCtr.getBody()
-								if err != nil {
-									results[1].Set(reflect.ValueOf(err).Convert(ErrorType))
+									header := varsCtr.getHeader()
+									for key, values := range header {
+										for _, value := range values {
+											req.Header.Add(key, value)
+										}
+									}
+
+									if contentType != ZeroStr {
+										req.Header.Set(headers.HeaderContentType, varsCtr.getContentType())
+									}
+
+									resp, err := creator.client.Do(req)
+
+									if err != nil {
+										results[1].Set(reflect.ValueOf(err).Convert(ErrorType))
+										return results
+									}
+
+									readUnmarshaler, exist := creator.unmarshalers.Check(resp)
+									if !exist {
+										results[1].Set(reflect.ValueOf(NoUnmarshalerFoundForResponseError(resp)).Convert(ErrorType))
+										return results
+									}
+
+									results[0].Set(reflect.ValueOf(newResponse(resp, readUnmarshaler)).Convert(ResponseType))
 									return results
 								}
+								fieldValue.Set(reflect.MakeFunc(fieldType, rawFunc))
+							default:
+								err = UnrecognizedHTTPMethodError(method)
 							}
-
-							req, err := http.NewRequest(method, finalUrl.String(), body)
-							if err != nil {
-								results[1].Set(reflect.ValueOf(err).Convert(ErrorType))
-								return results
-							}
-
-							header := varsCtr.getHeader()
-							for key, values := range header {
-								for _, value := range values {
-									req.Header.Add(key, value)
-								}
-							}
-
-							if contentType != ZeroStr {
-								req.Header.Set(headers.HeaderContentType, varsCtr.getContentType())
-							}
-
-							resp, err := creator.client.Do(req)
-
-							if err != nil {
-								results[1].Set(reflect.ValueOf(err).Convert(ErrorType))
-								return results
-							}
-
-							readUnmarshaler, exist := creator.unmarshalers.Check(resp)
-							if !exist {
-								results[1].Set(reflect.ValueOf(NoUnmarshalerFoundForResponseError(resp)).Convert(ErrorType))
-								return results
-							}
-
-							results[0].Set(reflect.ValueOf(newResponse(resp, readUnmarshaler)).Convert(ResponseType))
-							return results
 						}
-						fieldValue.Set(reflect.MakeFunc(fieldType, rawFunc))
-					default:
-						err = UnrecognizedHTTPMethodError(method)
-						break FieldCycle
+					}
+
+					if err != nil {
+						break
 					}
 				}
 			}
