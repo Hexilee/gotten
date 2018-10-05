@@ -2,12 +2,14 @@ package gotten_test
 
 import (
 	"context"
+	"crypto/md5"
 	"encoding/json"
 	"fmt"
 	"github.com/Hexilee/gotten"
 	"github.com/Hexilee/gotten/headers"
 	"github.com/Hexilee/gotten/mock"
 	"github.com/go-chi/chi"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"strconv"
@@ -29,6 +31,7 @@ func init() {
 	router.Get("/post/{year}/{month}/{day}", getPost)
 	router.Post("/post/{year}/{month}/{day}", addPost)
 	router.Post("/post", addPostByForm)
+	router.Post("/avatar", addAvatar)
 
 	mockBuilder := mock.NewClientBuilder()
 	mockBuilder.Register("mock.io", router)
@@ -100,8 +103,6 @@ func addPostByForm(w http.ResponseWriter, r *http.Request) {
 	day, _ := strconv.Atoi(r.PostForm.Get("day"))
 	postStr := r.PostForm.Get("post")
 
-	fmt.Printf("PostForm of addPostByForm: %#v", r.PostForm)
-
 	var post TestPost
 	err := json.Unmarshal([]byte(postStr), &post)
 	if err != nil {
@@ -110,6 +111,48 @@ func addPostByForm(w http.ResponseWriter, r *http.Request) {
 	}
 
 	result = *database.Add(year, month, day, &post)
+}
+
+func addAvatar(w http.ResponseWriter, r *http.Request) {
+	var result UploadedData
+	defer func() {
+		w.Header().Set(headers.HeaderContentType, headers.MIMEApplicationJSONCharsetUTF8)
+		w.WriteHeader(http.StatusCreated)
+		respData, _ := json.Marshal(&result)
+		w.Write(respData)
+	}()
+
+	fmt.Printf("%#v\n", r.Header)
+
+	r.ParseMultipartForm(32 << 20)
+	file, handler, err := r.FormFile("avatar")
+
+	if err != nil {
+		fmt.Printf("%#v\n", err.Error())
+		return
+	}
+
+	result.Filename = handler.Filename
+	result.FileSize = handler.Size
+	result.Uid, err = strconv.Atoi(r.PostFormValue("uid"))
+	if err != nil {
+		return
+	}
+
+	result.Username = r.PostFormValue("username")
+	descData := r.PostFormValue("description")
+	var description AvatarDescription
+
+	if json.Unmarshal([]byte(descData), &description) != nil {
+		return
+	}
+
+	result.Creator = description.Creator
+	result.CreatedAt = description.CreatedAt
+
+	h := md5.New()
+	io.Copy(h, file)
+	result.Hash = string(h.Sum(nil))
 }
 
 type (

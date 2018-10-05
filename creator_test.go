@@ -6,6 +6,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"net/http"
 	"testing"
+	"time"
 )
 
 type (
@@ -13,6 +14,7 @@ type (
 		GetPosts      func(params *GetPostsParams) (gotten.Response, error)      `path:"/post/{year}/{month}/{day}"`
 		AddPost       func(params *AddPostParams) (gotten.Response, error)       `method:"POST" path:"/post/{year}/{month}/{day}"`
 		AddPostByForm func(params *AddPostByFormParams) (gotten.Response, error) `method:"POST" path:"/post"`
+		UploadAvatar  func(params *UploadAvatarParams) (gotten.Response, error)  `method:"POST" path:"/avatar"`
 	}
 
 	GetPostsParams struct {
@@ -35,6 +37,28 @@ type (
 		Month int       `type:"form"`
 		Day   int       `type:"form"`
 		Post  *TestPost `type:"json"`
+	}
+
+	AvatarDescription struct {
+		Creator   string
+		CreatedAt time.Time
+	}
+
+	UploadAvatarParams struct {
+		Uid         int                `type:"part"`
+		Username    string             `type:"part"`
+		Avatar      gotten.FilePath    `type:"part"`
+		Description *AvatarDescription `type:"json"`
+	}
+
+	UploadedData struct {
+		Hash      string
+		Uid       int
+		Username  string
+		Filename  string
+		FileSize  int64
+		Creator   string
+		CreatedAt time.Time
 	}
 )
 
@@ -91,4 +115,26 @@ func TestCreator_Impl(t *testing.T) {
 	assert.Equal(t, 10, addedResult.Month)
 	assert.Equal(t, 1, addedResult.Day)
 	assert.Equal(t, 3, addedResult.Order)
+
+	resp, err = service.UploadAvatar(&UploadAvatarParams{
+		Uid:      1,
+		Username: "Hexilee",
+		Avatar:   "testAssets/Concurrency-in-Go.pdf",
+		Description: &AvatarDescription{
+			Creator:   "Hexilee",
+			CreatedAt: time.Now(),
+		},
+	})
+
+	var uploadedData UploadedData
+
+	assert.Nil(t, err)
+	assert.Equal(t, http.StatusCreated, resp.StatusCode())
+	assert.Nil(t, resp.Unmarshal(&uploadedData))
+	assert.Equal(t, 1, uploadedData.Uid)
+	assert.Equal(t, "Hexilee", uploadedData.Username)
+	assert.Equal(t, "Concurrency-in-Go.pdf", uploadedData.Filename)
+	//assert.Equal(t, 10, addedResult.Month)
+	//assert.Equal(t, 1, addedResult.Day)
+	//assert.Equal(t, 3, addedResult.Order)
 }

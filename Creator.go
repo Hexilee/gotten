@@ -241,7 +241,7 @@ func (creator *Creator) Impl(service interface{}) (err error) {
 									}
 
 									if contentType != ZeroStr {
-										req.Header.Set(headers.HeaderContentType, varsCtr.getContentType())
+										req.Header.Set(headers.HeaderContentType, contentType)
 									}
 
 									resp, err := creator.client.Do(req)

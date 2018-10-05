@@ -60,6 +60,7 @@ type (
 		multipartReaders map[string]MultipartReader
 		header           http.Header
 		body             io.Reader
+		writer           *multipart.Writer
 	}
 
 	// TypePath, TypeQuery, TypeForm, TypeHeader, TypeCookie, TypeMultipart(except io.Reader)
@@ -369,16 +370,19 @@ func (parser *VarsParser) Build() VarsController {
 	}
 
 	if varsCtr.contentType != ZeroStr {
-		varsCtr.body = bytes.NewBuffer(make([]byte, 0))
-	}
+		body := bytes.NewBuffer(make([]byte, 0))
+		varsCtr.body = body
 
-	if varsCtr.contentType == headers.MIMEMultipartForm {
-		varsCtr.multipartValues = make(map[string]string)
-		varsCtr.multipartReaders = make(map[string]MultipartReader)
-	}
+		if varsCtr.contentType == headers.MIMEMultipartForm {
+			varsCtr.multipartValues = make(map[string]string)
+			varsCtr.multipartReaders = make(map[string]MultipartReader)
+			varsCtr.multipartFiles = make(map[string]string)
+			varsCtr.writer = multipart.NewWriter(body)
+		}
 
-	if varsCtr.contentType == headers.MIMEApplicationForm {
-		varsCtr.formValues = make(url.Values)
+		if varsCtr.contentType == headers.MIMEApplicationForm {
+			varsCtr.formValues = make(url.Values)
+		}
 	}
 
 	return varsCtr
@@ -394,8 +398,13 @@ func (varsCtr VarsCtr) getUrl() (result *url.URL, err error) {
 	return
 }
 
-func (varsCtr VarsCtr) getContentType() string {
-	return varsCtr.contentType
+func (varsCtr VarsCtr) getContentType() (contentType string) {
+	if varsCtr.contentType == headers.MIMEMultipartForm {
+		contentType = varsCtr.writer.FormDataContentType()
+	} else {
+		contentType = varsCtr.contentType
+	}
+	return
 }
 
 func (varsCtr VarsCtr) getHeader() http.Header {
@@ -417,9 +426,8 @@ func (varsCtr VarsCtr) getBody() (body io.Reader, err error) {
 }
 
 func (varsCtr VarsCtr) getMultipartBody() (body io.ReadWriter, err error) {
-	body = bytes.NewBufferString("")
 	var partWriter io.Writer
-	writer := multipart.NewWriter(body)
+	writer := varsCtr.writer
 	for key, val := range varsCtr.multipartValues {
 		writer.WriteField(key, val)
 	}
