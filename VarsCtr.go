@@ -33,6 +33,7 @@ type (
 		setValues(value reflect.Value) error
 		getUrl() (*url.URL, error)
 		getBody() (io.Reader, error)
+		getHeader() http.Header
 	}
 
 	VarsParser struct {
@@ -390,6 +391,10 @@ func (varsCtr VarsCtr) getUrl() (result *url.URL, err error) {
 		result.RawQuery = query
 	}
 	return
+}
+
+func (varsCtr VarsCtr) getHeader() http.Header {
+	return varsCtr.header
 }
 
 func (varsCtr VarsCtr) getBody() (body io.Reader, err error) {
