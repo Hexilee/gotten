@@ -389,7 +389,7 @@ func (parser *VarsParser) Build() VarsController {
 }
 
 func (varsCtr VarsCtr) getUrl() (result *url.URL, err error) {
-	path := varsCtr.regex.ReplaceAllStringFunc(varsCtr.path, varsCtr.findAndReplace)
+	path := varsCtr.genPath()
 	result, err = url.Parse(path)
 	if err == nil {
 		query := varsCtr.queryValues.Encode()
