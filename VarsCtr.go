@@ -6,8 +6,11 @@ import (
 	"github.com/iancoleman/strcase"
 	"io"
 	"io/ioutil"
+	"mime/multipart"
 	"net/http"
 	"net/url"
+	"os"
+	"path/filepath"
 	"reflect"
 	"regexp"
 	"strconv"
@@ -29,7 +32,7 @@ type (
 	VarsController interface {
 		setValues(value reflect.Value) error
 		getUrl() (*url.URL, error)
-		getBody() (Reader, error)
+		getBody() (io.Reader, error)
 	}
 
 	VarsParser struct {
@@ -389,13 +392,57 @@ func (varsCtr VarsCtr) getUrl() (result *url.URL, err error) {
 	return
 }
 
-// TODO: complete getBody
-func (varsCtr VarsCtr) getBody() (body Reader, err error) {
+func (varsCtr VarsCtr) getBody() (body io.Reader, err error) {
+	switch varsCtr.contentType {
+	case headers.MIMEMultipartForm:
+		body, err = varsCtr.getMultipartBody()
+	case headers.MIMEApplicationForm:
+		body = bytes.NewBufferString(varsCtr.formValues.Encode())
+	case headers.MIMEApplicationXMLCharsetUTF8:
+		fallthrough
+	case headers.MIMEApplicationJSONCharsetUTF8:
+		body = varsCtr.body
+	}
 	return
 }
 
-// TODO: complete getMultipartBody
 func (varsCtr VarsCtr) getMultipartBody() (body io.ReadWriter, err error) {
+	body = bytes.NewBufferString("")
+	var partWriter io.Writer
+	writer := multipart.NewWriter(body)
+	for key, val := range varsCtr.multipartValues {
+		writer.WriteField(key, val)
+	}
+
+	for key, reader := range varsCtr.multipartReaders {
+		if x, ok := reader.reader.(io.Closer); ok {
+			defer x.Close()
+		}
+
+		if partWriter, err = writer.CreateFormField(key); err == nil {
+			_, err = io.Copy(partWriter, reader.reader)
+		}
+
+		if err != nil {
+			break
+		}
+	}
+
+	for key, path := range varsCtr.multipartFiles {
+		file, err := os.Open(path)
+		defer file.Close()
+		if err == nil {
+			if partWriter, err = writer.CreateFormFile(key, filepath.Base(file.Name())); err == nil {
+				_, err = io.Copy(partWriter, file)
+			}
+		}
+
+		if err != nil {
+			break
+		}
+	}
+
+	writer.Close()
 	return
 }
 
