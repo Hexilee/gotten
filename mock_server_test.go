@@ -28,6 +28,7 @@ func init() {
 	router = chi.NewRouter()
 	router.Get("/post/{year}/{month}/{day}", getPost)
 	router.Post("/post/{year}/{month}/{day}", addPost)
+	router.Post("/post", addPostByForm)
 
 	mockBuilder := mock.NewClientBuilder()
 	mockBuilder.Register("mock.io", router)
@@ -76,6 +77,31 @@ func addPost(w http.ResponseWriter, r *http.Request) {
 
 	var post TestPost
 	err = json.Unmarshal(data, &post)
+	if err != nil {
+		result.Success = false
+		return
+	}
+
+	result = *database.Add(year, month, day, &post)
+}
+
+func addPostByForm(w http.ResponseWriter, r *http.Request) {
+	var result AddedData
+	defer func() {
+		w.Header().Set(headers.HeaderContentType, headers.MIMEApplicationJSONCharsetUTF8)
+		w.WriteHeader(http.StatusCreated)
+		respData, _ := json.Marshal(&result)
+		w.Write(respData)
+	}()
+
+	r.ParseForm()
+	year, _ := strconv.Atoi(r.PostForm.Get("year"))
+	month, _ := strconv.Atoi(r.PostForm.Get("month"))
+	day, _ := strconv.Atoi(r.PostForm.Get("day"))
+	postStr := r.PostForm.Get("post")
+
+	var post TestPost
+	err := json.Unmarshal([]byte(postStr), &post)
 	if err != nil {
 		result.Success = false
 		return

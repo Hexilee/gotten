@@ -10,8 +10,9 @@ import (
 
 type (
 	SampleService struct {
-		GetPosts func(params *GetPostsParams) (gotten.Response, error) `path:"/post/{year}/{month}/{day}"`
-		AddPost  func(params *AddPostParams) (gotten.Response, error)  `method:"POST" path:"/post/{year}/{month}/{day}"`
+		GetPosts      func(params *GetPostsParams) (gotten.Response, error)      `path:"/post/{year}/{month}/{day}"`
+		AddPost       func(params *AddPostParams) (gotten.Response, error)       `method:"POST" path:"/post/{year}/{month}/{day}"`
+		AddPostByForm func(params *AddPostByFormParams) (gotten.Response, error) `method:"POST" path:"/post"`
 	}
 
 	GetPostsParams struct {
@@ -26,6 +27,13 @@ type (
 		Year  int       `type:"path"`
 		Month int       `type:"path"`
 		Day   int       `type:"path"`
+		Post  *TestPost `type:"json"`
+	}
+
+	AddPostByFormParams struct {
+		Year  int       `type:"form"`
+		Month int       `type:"form"`
+		Day   int       `type:"form"`
 		Post  *TestPost `type:"json"`
 	}
 )
@@ -61,6 +69,22 @@ func TestCreator_Impl(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, http.StatusCreated, resp.StatusCode())
 	var addedResult AddedData
+	assert.Nil(t, resp.Unmarshal(&addedResult))
+	assert.True(t, addedResult.Success)
+	assert.Equal(t, 2018, addedResult.Year)
+	assert.Equal(t, 10, addedResult.Month)
+	assert.Equal(t, 1, addedResult.Day)
+	assert.Equal(t, 2, addedResult.Order)
+
+	resp, err = service.AddPostByForm(&AddPostByFormParams{
+		Year:  2018,
+		Month: 10,
+		Day:   1,
+		Post:  &TestPost{"Hexilee", "AddPostByForm Test", "Success!"},
+	})
+
+	assert.Nil(t, err)
+	assert.Equal(t, http.StatusCreated, resp.StatusCode())
 	assert.Nil(t, resp.Unmarshal(&addedResult))
 	assert.True(t, addedResult.Success)
 	assert.Equal(t, 2018, addedResult.Year)
