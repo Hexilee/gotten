@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"github.com/iancoleman/strcase"
+	"io"
 	"net/url"
 	"reflect"
 	"regexp"
@@ -26,12 +27,14 @@ type (
 	VarsController interface {
 		setValues(value reflect.Value) error
 		getUrl() (*url.URL, error)
+		getBody() (io.Reader, error)
 	}
 
 	VarsParser struct {
 		regex       *regexp.Regexp
 		path        string
 		pathKeys    PathKeyList
+		contentType string
 		fieldTables []*Field
 	}
 
@@ -206,6 +209,11 @@ func (varsCtr VarsCtr) getUrl() (result *url.URL, err error) {
 		query := varsCtr.queryValues.Encode()
 		result.RawQuery = query
 	}
+	return
+}
+
+// TODO: complete getBody
+func (varsCtr VarsCtr) getBody() (body io.Reader, err error) {
 	return
 }
 

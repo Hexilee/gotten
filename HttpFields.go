@@ -1,11 +1,8 @@
 package gotten
 
 const (
-	// support types: fmt.Stringer, int, string
-	TypeHeader = "header"
+// support types: fmt.Stringer, int, string
 
-	// support types: string, *http.Cookie
-	TypeCookie = "cookie"
 )
 
 //type Header string

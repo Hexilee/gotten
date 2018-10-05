@@ -6,10 +6,16 @@ import (
 
 const (
 	// support types: fmt.Stringer, int, string
+	TypeHeader = "header"
+
+	// support types: fmt.Stringer, int, string
 	TypePath = "path"
 
 	// support types: fmt.Stringer, int, string
 	TypeQuery = "query"
+
+	// support types: fmt.Stringer, int, string
+	TypeForm = "form"
 
 	// support types: fmt.Stringer, int, string, io.Reader, PartFile
 	TypeMultipart = "part"
@@ -20,8 +26,8 @@ const (
 	// support types: fmt.Stringer, io.Reader, string, struct
 	TypeXML = "xml"
 
-	// support types: fmt.Stringer, int, string
-	TypeForm = "form"
+	// support types: string, *http.Cookie
+	TypeCookie = "cookie"
 )
 
 type (
