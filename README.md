@@ -4,6 +4,7 @@
 package example
 
 import (
+	"fmt"
 	"github.com/Hexilee/gotten"
 	"net/http"
 	"time"
@@ -11,14 +12,8 @@ import (
 
 type (
 	SimpleParams struct {
-		Id   gotten.PathInt
-		Page gotten.QueryInt
-	}
-
-	SimpleResult struct {
-		Status       gotten.Status     `expect:"200"`
-		ExpectResult ExpectResult      `expect:"200"`
-		BadResult    ObjectNotFound    `expect:"404"`
+		Id   int `type:"path"`
+		Page int `type:"query"`
 	}
 
 	Item struct {
@@ -36,12 +31,12 @@ type (
 	}
 
 	SimpleService struct {
-		GetItems func(SimpleParams) (SimpleResult, error) `method:"GET";path:"itemType/{id}"`
+		GetItems func(*SimpleParams) (gotten.Response, error) `method:"GET";path:"itemType/{id}"`
 	}
 )
 
 var (
-	creator = gotten.NewBuilder().
+	creator, err = gotten.NewBuilder().
 		SetBaseUrl("https://api.sample.com").
 		AddCookie(&http.Cookie{Name: "clientcookieid", Value: "121", Expires: time.Now().Add(111 * time.Second)}).
 		Build()
@@ -57,9 +52,11 @@ func init() {
 }
 
 func InYourFunc() {
-	result, err := simpleServiceImpl.GetItems(SimpleParams{1, 1})
-	if err == nil {
-		print(result.ExpectResult)
+	resp, err := simpleServiceImpl.GetItems(&SimpleParams{1, 1})
+	if err == nil && resp.StatusCode() == http.StatusOK {
+		result := make([]*Item, 0) 
+		err = resp.Unmarshal(&result)
+		fmt.Printf("%#v\n", result)
 	}
 }
 ```
