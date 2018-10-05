@@ -64,6 +64,7 @@ type (
 		defaultValue string
 		valueType    string
 		require      bool
+		fieldType    reflect.Type
 		// can only called by getValue
 		getValueFunc func(value reflect.Value) (string, error)
 	}
@@ -173,6 +174,7 @@ func (parser *VarsParser) addField(index int, valueType string, field reflect.St
 			name:         field.Name,
 			defaultValue: defaultValue,
 			valueType:    valueType,
+			fieldType:    fieldType,
 			require:      require,
 		}
 		switch valueType {
@@ -421,8 +423,12 @@ func (varsCtr *VarsCtr) setValuesByFields(value reflect.Value) (err error) {
 					varsCtr.formValues.Add(field.key, val)
 				}
 			case TypeMultipart:
-				// TODO: add file support
-				varsCtr.multipartValues[field.key], err = field.getValue(fieldValue)
+				val, err = field.getValue(fieldValue)
+				if field.fieldType == PartFileType {
+					varsCtr.multipartFiles[field.key] = val
+				} else {
+					varsCtr.multipartValues[field.key] = val
+				}
 			default:
 				panic(UnsupportedValueTypeError(field.valueType))
 			}
