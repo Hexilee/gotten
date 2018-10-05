@@ -2,9 +2,10 @@ package gotten
 
 import (
 	"bytes"
-	"fmt"
+	"github.com/Hexilee/gotten/headers"
 	"github.com/iancoleman/strcase"
 	"io"
+	"mime/multipart"
 	"net/url"
 	"reflect"
 	"regexp"
@@ -27,23 +28,29 @@ type (
 	VarsController interface {
 		setValues(value reflect.Value) error
 		getUrl() (*url.URL, error)
-		getBody() (io.Reader, error)
+		getBody() (Reader, error)
 	}
 
 	VarsParser struct {
-		regex       *regexp.Regexp
-		path        string
-		pathKeys    PathKeyList
-		contentType string
-		fieldTables []*Field
+		regex        *regexp.Regexp
+		path         string
+		pathKeys     PathKeyList
+		contentType  string
+		fieldTable   []*Field
+		ioFieldTable []*IOField
 	}
 
 	VarsCtr struct {
-		regex       *regexp.Regexp
-		path        string
-		fieldTables []*Field
-		pathValues  map[string]string
-		queryValues url.Values
+		regex        *regexp.Regexp
+		path         string
+		contentType  string
+		fieldTable   []*Field
+		ioFieldTable []*IOField
+		pathValues   map[string]string
+		queryValues  url.Values
+		formValues   url.Values
+		body         io.ReadWriter
+		writer       *multipart.Writer
 	}
 
 	Field struct {
@@ -52,27 +59,23 @@ type (
 		defaultValue string
 		valueType    string
 		require      bool
-		getValueFunc func(value reflect.Value) string
+		getValueFunc func(value reflect.Value) (string, error)
 	}
 
-	//QueryField struct {
-	//	key          string
-	//	defaultValue string
-	//	require      bool
-	//	getValueFunc func(value reflect.Value) string
-	//}
-	//
-	//PathField struct {
-	//	defaultValue string
-	//	key          string
-	//	value        string
-	//	getValueFunc func(value reflect.Value) string
-	//}
+	IOField struct {
+		key           string
+		name          string
+		defaultValue  string
+		valueType     string
+		require       bool
+		getReaderFunc func(value reflect.Value) (Reader, error)
+	}
 
 	PathKeyList map[string]bool
 )
 
 func newVarsParser(path string) (*VarsParser, error) {
+	// fieldTable and ioFieldTables will be made after num of fields is known
 	pathKeys, err := getPathKeys(pathKeyRegexp, path)
 	return &VarsParser{
 		regex:    pathKeyRegexp,
@@ -95,17 +98,32 @@ func getPathKeys(regex *regexp.Regexp, path string) (pathKeys PathKeyList, err e
 }
 
 func (field Field) getValue(value reflect.Value) (val string, err error) {
-	val = field.getValueFunc(value)
-	if val == ZeroStr {
+	val, err = field.getValueFunc(value)
+	if err == nil && val == ZeroStr {
 		val = field.defaultValue
 		if !field.hasDefaultValue() && field.require {
-			err = EmptyRequiredVariableError(field.key)
+			err = EmptyRequiredVariableError(field.name)
+		}
+	}
+	return
+}
+
+func (field IOField) getValue(value reflect.Value) (val Reader, err error) {
+	val, err = field.getReaderFunc(value)
+	if err == nil && val.Empty() {
+		val = newReader(bytes.NewBufferString(field.defaultValue), !field.hasDefaultValue())
+		if val.Empty() && field.require {
+			err = EmptyRequiredVariableError(field.name)
 		}
 	}
 	return
 }
 
 func (field Field) hasDefaultValue() bool {
+	return field.defaultValue != ZeroStr
+}
+
+func (field IOField) hasDefaultValue() bool {
 	return field.defaultValue != ZeroStr
 }
 
@@ -129,58 +147,106 @@ func (list PathKeyList) empty() bool {
 	return len(list) == 0
 }
 
+// can only be called by parse
+func (parser *VarsParser) addField(index int, valueType string, field reflect.StructField) (err error) {
+	fieldType := field.Type
+	fieldTag := field.Tag
+	key := processKey(fieldTag.Get(KeyKey), valueType, field.Name)
+	defaultValue := fieldTag.Get(KeyDefault)
+	require, parseErr := processRequired(fieldTag.Get(KeyRequire))
+	if err = parseErr; err == nil {
+		parser.fieldTable[index] = &Field{
+			key:          key,
+			name:         field.Name,
+			defaultValue: defaultValue,
+			valueType:    valueType,
+			require:      require,
+		}
+		switch valueType {
+		case TypePath:
+			if exist := parser.pathKeys.deleteKey(key); !exist {
+				err = UnrecognizedPathKeyError(key)
+			}
+			parser.fieldTable[index].require = true // path is always required
+			fallthrough
+		case TypeQuery:
+			fallthrough
+		case TypeHeader:
+			parser.fieldTable[index].getValueFunc, err = getValueGetterFunc(fieldType, TypePath)
+			// TODO: TypeCookie
+		default:
+		}
+	}
+	return
+}
+
+// can only be called by parse
+func (parser *VarsParser) addIOField(index int, valueType string, field reflect.StructField) (err error) {
+	fieldType := field.Type
+	fieldTag := field.Tag
+	key := processKey(fieldTag.Get(KeyKey), valueType, field.Name)
+	defaultValue := fieldTag.Get(KeyDefault)
+	require, parseErr := processRequired(fieldTag.Get(KeyRequire))
+	if err = parseErr; err == nil {
+		parser.ioFieldTable[index] = &IOField{
+			key:          key,
+			name:         field.Name,
+			defaultValue: defaultValue,
+			valueType:    valueType,
+			require:      require,
+		}
+
+		switch valueType {
+		case TypeForm:
+			err = parser.checkContentType(headers.MIMEApplicationForm)
+			if err == nil {
+				parser.ioFieldTable[index].getReaderFunc, err = getReaderGetterFunc(fieldType, TypePath)
+			}
+		case TypeJSON:
+			err = parser.checkContentType(headers.MIMEApplicationJSONCharsetUTF8)
+		case TypeMultipart:
+			err = parser.checkContentType(headers.MIMEMultipartForm)
+
+		case TypeXML:
+			err = parser.checkContentType(headers.MIMEApplicationXMLCharsetUTF8)
+		default:
+		}
+	}
+	return
+}
+
 func (parser *VarsParser) parse(paramType reflect.Type) (err error) {
 	paramElem := paramType.Elem()
 	if paramType.Kind() != reflect.Ptr || paramElem.Kind() != reflect.Struct {
 		err = ParamTypeMustBePtrOfStructError(paramElem)
 	}
-
 	if err == nil {
-		parser.fieldTables = make([]*Field, paramElem.NumField())
-	FieldCycle:
+		parser.fieldTable = make([]*Field, paramElem.NumField())
+		parser.ioFieldTable = make([]*IOField, paramElem.NumField())
 		for i := 0; i < paramElem.NumField(); i++ {
 			field := paramElem.Field(i)
 			if fieldExportable(field.Name) {
-				fieldType := field.Type
-				fieldTag := field.Tag
-				valueType := fieldTag.Get(KeyType)
-				key := processKey(fieldTag.Get(KeyKey), valueType, field.Name)
-				defaultValue := fieldTag.Get(KeyDefault)
-				require, parseErr := processRequired(fieldTag.Get(KeyRequire))
-				if err = parseErr; err == nil {
-					parser.fieldTables[i] = &Field{
-						key:          key,
-						name:         field.Name,
-						defaultValue: defaultValue,
-						valueType:    valueType,
-						require:      require,
-					}
-
-					switch valueType {
-					case TypePath:
-						if exist := parser.pathKeys.deleteKey(key); !exist {
-							err = UnrecognizedPathKeyError(key)
-							break FieldCycle
-						}
-						parser.fieldTables[i].require = true // path is always required
-						fallthrough
-					case TypeQuery:
-						fallthrough
-					case TypeHeader:
-						fallthrough
-					case TypeForm:
-						parser.fieldTables[i].getValueFunc, err = FirstValueGetterFunc(fieldType, TypePath)
-						if err != nil {
-							break FieldCycle
-						}
-						// TODO: TypeCookie
-					case TypeJSON:
-					case TypeMultipart:
-					case TypeXML:
-					default:
-						err = UnrecognizedFieldTypeError(fieldTag.Get(KeyType))
-						break FieldCycle
-					}
+				valueType := field.Tag.Get(KeyType)
+				switch valueType {
+				case TypePath:
+					fallthrough
+				case TypeQuery:
+					fallthrough
+				case TypeHeader:
+					err = parser.addField(i, valueType, field)
+				case TypeForm:
+					fallthrough
+				case TypeJSON:
+					fallthrough
+				case TypeMultipart:
+					fallthrough
+				case TypeXML:
+					fallthrough
+				default:
+					err = UnrecognizedFieldTypeError(field.Tag.Get(KeyType))
+				}
+				if err != nil {
+					break
 				}
 			}
 		}
@@ -192,14 +258,89 @@ func (parser *VarsParser) parse(paramType reflect.Type) (err error) {
 	return
 }
 
-func (parser *VarsParser) Build() VarsController {
-	return &VarsCtr{
-		regex:       parser.regex,
-		path:        parser.path,
-		fieldTables: parser.fieldTables,
-		pathValues:  make(map[string]string),
-		queryValues: make(url.Values),
+// can only be called by checkContentType
+func (parser *VarsParser) setContentType(contentType string) {
+	parser.contentType = contentType
+}
+
+// TODO: test it
+// can only be called by parse()
+func (parser *VarsParser) checkContentType(contentType string) (err error) {
+ContentTypeSwitch:
+	switch contentType {
+	case headers.MIMEMultipartForm:
+		switch parser.contentType {
+		case headers.MIMEApplicationForm:
+			err = ContentTypeConflictError(parser.contentType, contentType)
+			break ContentTypeSwitch
+		case ZeroStr:
+			fallthrough
+		case headers.MIMEApplicationJSONCharsetUTF8:
+			fallthrough
+		case headers.MIMEApplicationXMLCharsetUTF8:
+			parser.setContentType(contentType)
+		case headers.MIMEMultipartForm:
+		default:
+			panic("Unsupported content type of parser: " + contentType)
+		}
+	case headers.MIMEApplicationForm:
+		switch parser.contentType {
+		case headers.MIMEMultipartForm:
+			err = ContentTypeConflictError(parser.contentType, contentType)
+			break ContentTypeSwitch
+		case ZeroStr:
+			fallthrough
+		case headers.MIMEApplicationJSONCharsetUTF8:
+			fallthrough
+		case headers.MIMEApplicationXMLCharsetUTF8:
+			parser.setContentType(contentType)
+		case headers.MIMEApplicationForm:
+		default:
+			panic("Unsupported content type of parser: " + contentType)
+		}
+	case headers.MIMEApplicationJSONCharsetUTF8:
+		fallthrough
+	case headers.MIMEApplicationXMLCharsetUTF8:
+		switch parser.contentType {
+		case headers.MIMEApplicationJSONCharsetUTF8:
+			fallthrough
+		case headers.MIMEApplicationXMLCharsetUTF8:
+			err = ContentTypeConflictError(parser.contentType, contentType)
+			break ContentTypeSwitch
+		case ZeroStr:
+			parser.setContentType(contentType)
+		case headers.MIMEApplicationForm:
+		case headers.MIMEMultipartForm:
+		default:
+			panic("Unsupported content type of parser: " + contentType)
+		}
+	default:
+		panic("Unsupported content type: " + contentType)
 	}
+	return
+}
+
+func (parser *VarsParser) Build() VarsController {
+	varsCtr := &VarsCtr{
+		regex:        parser.regex,
+		path:         parser.path,
+		contentType:  parser.contentType,
+		fieldTable:   parser.fieldTable,
+		ioFieldTable: parser.ioFieldTable,
+		pathValues:   make(map[string]string),
+		queryValues:  make(url.Values),
+	}
+
+	if varsCtr.contentType == headers.MIMEMultipartForm {
+		varsCtr.body = bytes.NewBuffer(make([]byte, 0))
+		varsCtr.writer = multipart.NewWriter(varsCtr.body)
+	}
+
+	if varsCtr.contentType == headers.MIMEApplicationForm {
+		varsCtr.formValues = make(url.Values)
+	}
+
+	return varsCtr
 }
 
 func (varsCtr VarsCtr) getUrl() (result *url.URL, err error) {
@@ -213,14 +354,19 @@ func (varsCtr VarsCtr) getUrl() (result *url.URL, err error) {
 }
 
 // TODO: complete getBody
-func (varsCtr VarsCtr) getBody() (body io.Reader, err error) {
+func (varsCtr VarsCtr) getBody() (body Reader, err error) {
+	return
+}
+
+// TODO: complete getMultipartBody
+func (varsCtr VarsCtr) getMultipartBody() (body io.ReadWriter, err error) {
 	return
 }
 
 func (varsCtr *VarsCtr) setValues(ptr reflect.Value) (err error) {
 	value := ptr.Elem()
 RangeCycle:
-	for i, field := range varsCtr.fieldTables {
+	for i, field := range varsCtr.fieldTable {
 		if field != nil {
 			fieldValue := value.Field(i)
 			switch field.valueType {
@@ -250,34 +396,6 @@ func (varsCtr VarsCtr) findAndReplace(pattern string) string {
 
 func (varsCtr VarsCtr) genPath() string {
 	return varsCtr.regex.ReplaceAllStringFunc(varsCtr.path, varsCtr.findAndReplace)
-}
-
-func getValueFromStringer(value reflect.Value) string {
-	stringer, ok := value.Interface().(fmt.Stringer)
-	if !ok {
-		panic(ValueIsNotStringerError(value.Type()))
-	}
-	return stringer.String()
-}
-
-func getValueFromString(value reflect.Value) string {
-	val, ok := value.Interface().(string)
-	if !ok {
-		panic(ValueIsNotStringError(value.Type()))
-	}
-	return val
-}
-
-func getValueFromInt(value reflect.Value) (str string) {
-	val, ok := value.Interface().(int)
-	if !ok {
-		panic(ValueIsNotIntError(value.Type()))
-	}
-
-	if val != ZeroInt {
-		str = strconv.Itoa(val)
-	}
-	return
 }
 
 func getKeyFromPattern(pattern string) string {

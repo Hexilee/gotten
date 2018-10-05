@@ -24,6 +24,7 @@ const (
 	UnsupportedFieldType          = "field type is unsupported"
 	SomePathVarHasNoValue         = "some pathValue has no value"
 	NoUnmarshalerFoundForResponse = "no unmarshaler found for response"
+	ContentTypeConflict           = "content type conflict: "
 )
 
 func MustPassPtrToImplError(p reflect.Type) error {
@@ -66,8 +67,8 @@ func UnrecognizedPathKeyError(key string) error {
 	return errors.New(UnrecognizedPathKey + ": " + key)
 }
 
-func EmptyRequiredVariableError(key string) error {
-	return errors.New(EmptyRequiredVariable + ": " + key)
+func EmptyRequiredVariableError(name string) error {
+	return errors.New(EmptyRequiredVariable + ": " + name)
 }
 
 func UnsupportedFieldTypeError(fieldType reflect.Type, valueType string) error {
@@ -87,4 +88,8 @@ func SomePathVarHasNoValueError(list PathKeyList) error {
 
 func NoUnmarshalerFoundForResponseError(response *http.Response) error {
 	return errors.New(fmt.Sprintf(NoUnmarshalerFoundForResponse+"%#v", response))
+}
+
+func ContentTypeConflictError(former string, latter string) error {
+	return errors.New(fmt.Sprintf(ContentTypeConflict+" %s(former), %s(former)", former, latter))
 }
