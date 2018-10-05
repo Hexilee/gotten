@@ -133,7 +133,7 @@ func getXMLReaderGetterFunc(fieldType reflect.Type, valueType string) (getValueF
 
 func getMarshalReaderGetterFunc(marshalFunc func(obj interface{}) ([]byte, error)) func(value reflect.Value) (Reader, error) {
 	return func(value reflect.Value) (Reader, error) {
-		data, err := marshalFunc(value)
+		data, err := marshalFunc(value.Interface())
 		return newReadCloser(bytes.NewBuffer(data), false), err
 	}
 }
