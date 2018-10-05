@@ -23,13 +23,6 @@ type (
 		Description string
 	}
 
-	ExpectResult []*Item
-	ObjectNotFound struct {
-		Key         string
-		Reason      string
-		Description string
-	}
-
 	SimpleService struct {
 		GetItems func(*SimpleParams) (gotten.Response, error) `method:"GET";path:"itemType/{id}"`
 	}
