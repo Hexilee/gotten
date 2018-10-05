@@ -100,6 +100,8 @@ func addPostByForm(w http.ResponseWriter, r *http.Request) {
 	day, _ := strconv.Atoi(r.PostForm.Get("day"))
 	postStr := r.PostForm.Get("post")
 
+	fmt.Printf("%#v", r.PostForm)
+
 	var post TestPost
 	err := json.Unmarshal([]byte(postStr), &post)
 	if err != nil {

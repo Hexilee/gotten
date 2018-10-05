@@ -2,6 +2,7 @@ package gotten
 
 import (
 	"bytes"
+	"fmt"
 	"github.com/Hexilee/gotten/headers"
 	"github.com/iancoleman/strcase"
 	"io"
@@ -511,6 +512,7 @@ func (varsCtr *VarsCtr) setValuesByIOFields(value reflect.Value) (err error) {
 				case headers.MIMEApplicationForm:
 					var data []byte
 					reader, err = field.getValue(fieldValue)
+					fmt.Printf("%#v\n", field)
 					if err == nil && !reader.Empty() {
 						data, err = ioutil.ReadAll(reader)
 						varsCtr.formValues.Add(field.key, string(data))
@@ -596,12 +598,14 @@ func processKey(rawKey, valueType, fieldName string) (key string) {
 			fallthrough
 		case TypeMultipart:
 			fallthrough
+		case TypeJSON:
+			fallthrough
+		case TypeXML:
+			fallthrough
 		case TypeForm:
 			key = strcase.ToSnake(fieldName)
 		case TypeHeader:
 			key = strcase.ToScreamingKebab(fieldName)
-		case TypeJSON:
-		case TypeXML:
 		default:
 		}
 	}

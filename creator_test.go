@@ -90,5 +90,5 @@ func TestCreator_Impl(t *testing.T) {
 	assert.Equal(t, 2018, addedResult.Year)
 	assert.Equal(t, 10, addedResult.Month)
 	assert.Equal(t, 1, addedResult.Day)
-	assert.Equal(t, 2, addedResult.Order)
+	assert.Equal(t, 3, addedResult.Order)
 }
