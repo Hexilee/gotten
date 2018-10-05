@@ -3,25 +3,27 @@ package gotten
 import (
 	"errors"
 	"fmt"
+	"net/http"
 	"reflect"
 	"strings"
 )
 
 const (
-	BaseUrlCannotBeEmpty       = "baseUrl cannot be empty"
-	MustPassPtrToImpl          = "must pass the ptr of the service to be implemented"
-	ServiceMustBeStruct        = "service must be struct"
-	UnrecognizedHTTPMethod     = "http method is unrecognized"
-	ParamTypeMustBePtrOfStruct = "param type must be ptr of struct"
-	ValueIsNotStringer         = "value is not a stringer"
-	ValueIsNotString           = "value is not a string"
-	ValueIsNotInt              = "value is not a int"
-	DuplicatedPathKey          = "duplicated path key"
-	UnrecognizedFieldType      = "field type is unrecognized"
-	UnrecognizedPathKey        = "path key is unrecognized"
-	EmptyRequiredVariable      = "required variable is empty"
-	UnsupportedFieldType       = "field type is unsupported"
-	SomePathVarHasNoValue      = "some pathValue has no value"
+	BaseUrlCannotBeEmpty          = "baseUrl cannot be empty"
+	MustPassPtrToImpl             = "must pass the ptr of the service to be implemented"
+	ServiceMustBeStruct           = "service must be struct"
+	UnrecognizedHTTPMethod        = "http method is unrecognized"
+	ParamTypeMustBePtrOfStruct    = "param type must be ptr of struct"
+	ValueIsNotStringer            = "value is not a stringer"
+	ValueIsNotString              = "value is not a string"
+	ValueIsNotInt                 = "value is not a int"
+	DuplicatedPathKey             = "duplicated path key"
+	UnrecognizedFieldType         = "field type is unrecognized"
+	UnrecognizedPathKey           = "path key is unrecognized"
+	EmptyRequiredVariable         = "required variable is empty"
+	UnsupportedFieldType          = "field type is unsupported"
+	SomePathVarHasNoValue         = "some pathValue has no value"
+	NoUnmarshalerFoundForResponse = "no unmarshaler found for response"
 )
 
 func MustPassPtrToImplError(p reflect.Type) error {
@@ -81,4 +83,8 @@ func SomePathVarHasNoValueError(list PathKeyList) error {
 		buf.WriteString(key)
 	}
 	return errors.New(buf.String())
+}
+
+func NoUnmarshalerFoundForResponseError(response *http.Response) error {
+	return errors.New(fmt.Sprintf(NoUnmarshalerFoundForResponse+"%#v", response))
 }

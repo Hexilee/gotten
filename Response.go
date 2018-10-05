@@ -31,11 +31,11 @@ type (
 
 	ResponseImpl struct {
 		*http.Response
-		unmarshaler ReaderUnmarshaler
+		unmarshaler ReadUnmarshaler
 	}
 )
 
-func newResponse(resp *http.Response, unmarshaler ReaderUnmarshaler) Response {
+func newResponse(resp *http.Response, unmarshaler ReadUnmarshaler) Response {
 	return &ResponseImpl{resp, unmarshaler}
 }
 

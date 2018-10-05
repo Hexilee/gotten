@@ -8,7 +8,7 @@ import (
 
 type (
 	SampleService struct {
-		Get func(params *GetParams) (*GetResult, error) `path:"/post/{year}/{month}/{day}"`
+		Get func(params *GetParams) (gotten.Response, error) `path:"/post/{year}/{month}/{day}"`
 	}
 
 	GetParams struct {
@@ -17,10 +17,6 @@ type (
 		Day   int `type:"path"`
 		Page  int `type:"query" default:"1"`
 		Limit int `type:"query" default:"15"`
-	}
-
-	GetResult struct {
-		Status gotten.Status
 	}
 )
 

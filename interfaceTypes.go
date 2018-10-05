@@ -11,6 +11,7 @@ type (
 		stringer fmt.Stringer
 		reader   io.Reader
 		error    error
+		response Response
 	}
 )
 
@@ -20,4 +21,5 @@ var (
 	StringerType = typesValue.FieldByName("stringer").Type()
 	ReaderType   = typesValue.FieldByName("reader").Type()
 	ErrorType    = typesValue.FieldByName("error").Type()
+	ResponseType = typesValue.FieldByName("response").Type()
 )
