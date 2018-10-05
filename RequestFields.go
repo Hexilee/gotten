@@ -24,7 +24,7 @@ const (
 	// support types: fmt.Stringer, int, string
 	TypeForm = "form"
 
-	// support types: fmt.Stringer, int, string, Reader, PartFile
+	// support types: fmt.Stringer, int, string, Reader, FilePath
 	TypeMultipart = "part"
 
 	// support types: fmt.Stringer, Reader, string, struct, slice, map
@@ -38,13 +38,13 @@ const (
 )
 
 type (
-	PartFile string
+	FilePath string
 )
 
 //
 var (
-	partFile     = PartFile("")
-	PartFileType = reflect.TypeOf(partFile)
+	filePath     = FilePath("")
+	FilePathType = reflect.TypeOf(filePath)
 	IntType      = reflect.TypeOf(int(1))
 	StringType   = reflect.TypeOf("")
 )
@@ -57,8 +57,8 @@ func getMultipartValueGetterFunc(fieldType reflect.Type, valueType string) (getV
 		getValueFunc = getValueFromString
 	case StringerType:
 		getValueFunc = getValueFromStringer
-	case PartFileType:
-		getValueFunc = getValueFromPartFile
+	case FilePathType:
+		getValueFunc = getValueFromFilePath
 	default:
 		err = UnsupportedFieldTypeError(fieldType, valueType)
 	}
@@ -147,10 +147,10 @@ func getValueFromStringer(value reflect.Value) (str string, err error) {
 	return
 }
 
-func getValueFromPartFile(value reflect.Value) (str string, err error) {
-	filePath, ok := value.Interface().(PartFile)
+func getValueFromFilePath(value reflect.Value) (str string, err error) {
+	filePath, ok := value.Interface().(FilePath)
 	if !ok {
-		panic(value.Type().String() + " is not PartFile")
+		panic(value.Type().String() + " is not FilePath")
 	}
 	str = string(filePath)
 	return

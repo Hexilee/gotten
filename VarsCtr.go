@@ -481,7 +481,7 @@ func (varsCtr *VarsCtr) setValuesByFields(value reflect.Value) (err error) {
 				}
 			case TypeMultipart:
 				val, err = field.getValue(fieldValue)
-				if field.fieldType == PartFileType {
+				if field.fieldType == FilePathType {
 					varsCtr.multipartFiles[field.key] = val
 				} else {
 					varsCtr.multipartValues[field.key] = val
