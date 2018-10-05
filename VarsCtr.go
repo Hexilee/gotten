@@ -413,10 +413,11 @@ func (varsCtr VarsCtr) getHeader() http.Header {
 
 func (varsCtr VarsCtr) getBody() (body io.Reader, err error) {
 	switch varsCtr.contentType {
-	case headers.MIMEMultipartForm:
-		body, err = varsCtr.getMultipartBody()
 	case headers.MIMEApplicationForm:
 		body = bytes.NewBufferString(varsCtr.formValues.Encode())
+	case headers.MIMEMultipartForm:
+		err = varsCtr.resolveMultipartBody()
+		fallthrough
 	case headers.MIMEApplicationXMLCharsetUTF8:
 		fallthrough
 	case headers.MIMEApplicationJSONCharsetUTF8:
@@ -425,7 +426,7 @@ func (varsCtr VarsCtr) getBody() (body io.Reader, err error) {
 	return
 }
 
-func (varsCtr VarsCtr) getMultipartBody() (body io.ReadWriter, err error) {
+func (varsCtr VarsCtr) resolveMultipartBody() (err error) {
 	var partWriter io.Writer
 	writer := varsCtr.writer
 	for key, val := range varsCtr.multipartValues {

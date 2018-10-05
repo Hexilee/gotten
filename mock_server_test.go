@@ -123,6 +123,16 @@ func addAvatar(w http.ResponseWriter, r *http.Request) {
 	}()
 
 	fmt.Printf("%#v\n", r.Header)
+	defer r.Body.Close()
+
+	//data, err := ioutil.ReadAll(r.Body)
+	//if err != nil {
+	//	fmt.Println(err.Error())
+	//}
+	//
+	//if err == nil {
+	//	fmt.Println(string(data))
+	//}
 
 	r.ParseMultipartForm(32 << 20)
 	file, handler, err := r.FormFile("avatar")
@@ -152,7 +162,7 @@ func addAvatar(w http.ResponseWriter, r *http.Request) {
 
 	h := md5.New()
 	io.Copy(h, file)
-	result.Hash = string(h.Sum(nil))
+	result.Hash = fmt.Sprintf("%x", h.Sum(nil))
 }
 
 type (

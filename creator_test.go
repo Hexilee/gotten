@@ -1,10 +1,14 @@
 package gotten_test
 
 import (
+	"crypto/md5"
 	"encoding/json"
+	"fmt"
 	"github.com/Hexilee/gotten"
 	"github.com/stretchr/testify/assert"
+	"io"
 	"net/http"
+	"os"
 	"testing"
 	"time"
 )
@@ -116,13 +120,14 @@ func TestCreator_Impl(t *testing.T) {
 	assert.Equal(t, 1, addedResult.Day)
 	assert.Equal(t, 3, addedResult.Order)
 
+	now := time.Now()
 	resp, err = service.UploadAvatar(&UploadAvatarParams{
 		Uid:      1,
 		Username: "Hexilee",
 		Avatar:   "testAssets/Concurrency-in-Go.pdf",
 		Description: &AvatarDescription{
 			Creator:   "Hexilee",
-			CreatedAt: time.Now(),
+			CreatedAt: now,
 		},
 	})
 
@@ -134,7 +139,14 @@ func TestCreator_Impl(t *testing.T) {
 	assert.Equal(t, 1, uploadedData.Uid)
 	assert.Equal(t, "Hexilee", uploadedData.Username)
 	assert.Equal(t, "Concurrency-in-Go.pdf", uploadedData.Filename)
-	//assert.Equal(t, 10, addedResult.Month)
-	//assert.Equal(t, 1, addedResult.Day)
-	//assert.Equal(t, 3, addedResult.Order)
+	assert.Equal(t, "Hexilee", uploadedData.Creator)
+	assert.True(t, now.Equal(uploadedData.CreatedAt))
+
+	file, err := os.Open("testAssets/Concurrency-in-Go.pdf")
+	assert.Nil(t, err)
+	h := md5.New()
+	n, err := io.Copy(h, file)
+	assert.Nil(t, err)
+	assert.Equal(t, n, uploadedData.FileSize)
+	assert.Equal(t, fmt.Sprintf("%x", h.Sum(nil)), uploadedData.Hash)
 }
