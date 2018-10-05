@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"encoding/xml"
 	"fmt"
+	"io"
 	"reflect"
 	"strconv"
 )
@@ -37,31 +38,6 @@ const (
 
 type (
 	PartFile string
-
-	//	PathVar interface {
-	//		fmt.Stringer
-	//	}
-	//	QueryVar interface {
-	//		fmt.Stringer
-	//	}
-	//	PartVar interface {
-	//		fmt.Stringer
-	//	}
-	//
-	//	PathStr string
-	//
-	//	PathInt int
-	//
-	//	QueryStr string
-	//
-	//	QueryInt int
-	//
-	//	PartStr string
-	//
-	//	PartInt int
-	//
-	//	PartReader Reader
-	//
 )
 
 //
@@ -71,6 +47,22 @@ var (
 	IntType      = reflect.TypeOf(int(1))
 	StringType   = reflect.TypeOf("")
 )
+
+func getMultipartValueGetterFunc(fieldType reflect.Type, valueType string) (getValueFunc func(value reflect.Value) (string, error), err error) {
+	switch fieldType {
+	case IntType:
+		getValueFunc = getValueFromInt
+	case StringType:
+		getValueFunc = getValueFromString
+	case StringerType:
+		getValueFunc = getValueFromStringer
+	case PartFileType:
+		getValueFunc = getValueFromPartFile
+	default:
+		err = UnsupportedFieldTypeError(fieldType, valueType)
+	}
+	return
+}
 
 // for TypePath, TypeQuery, TypeHeader and TypeForm
 func getValueGetterFunc(fieldType reflect.Type, valueType string) (getValueFunc func(value reflect.Value) (string, error), err error) {
@@ -103,7 +95,8 @@ func getReaderGetterFunc(fieldType reflect.Type, valueType string) (getValueFunc
 }
 
 // can only be called by parse
-func getJSONReaderGetterFunc(fieldKind reflect.Kind, fieldType reflect.Type, valueType string) (getValueFunc func(value reflect.Value) (Reader, error), err error) {
+func getJSONReaderGetterFunc(fieldType reflect.Type, valueType string) (getValueFunc func(value reflect.Value) (Reader, error), err error) {
+	fieldKind := fieldType.Kind()
 	switch fieldKind {
 	case reflect.Ptr:
 		fallthrough
@@ -120,7 +113,8 @@ func getJSONReaderGetterFunc(fieldKind reflect.Kind, fieldType reflect.Type, val
 }
 
 // can only be called by parse
-func getXMLReaderGetterFunc(fieldKind reflect.Kind, fieldType reflect.Type, valueType string) (getValueFunc func(value reflect.Value) (Reader, error), err error) {
+func getXMLReaderGetterFunc(fieldType reflect.Type, valueType string) (getValueFunc func(value reflect.Value) (Reader, error), err error) {
+	fieldKind := fieldType.Kind()
 	switch fieldKind {
 	case reflect.Ptr:
 		fallthrough
@@ -149,6 +143,15 @@ func getValueFromStringer(value reflect.Value) (str string, err error) {
 		panic(ValueIsNotStringerError(value.Type()))
 	}
 	str = stringer.String()
+	return
+}
+
+func getValueFromPartFile(value reflect.Value) (str string, err error) {
+	filePath, ok := value.Interface().(PartFile)
+	if !ok {
+		panic(value.Type().String() + " is not PartFile")
+	}
+	str = string(filePath)
 	return
 }
 
@@ -204,9 +207,11 @@ func getReaderFromInt(value reflect.Value) (reader Reader, err error) {
 }
 
 func getReaderFromReader(value reflect.Value) (reader Reader, err error) {
-	reader, ok := value.Interface().(Reader)
+	ioReader, ok := value.Interface().(io.Reader)
 	if !ok {
 		panic(value.Type().String() + " is not a Reader")
 	}
+
+	reader = newReader(ioReader, value.IsNil())
 	return
 }

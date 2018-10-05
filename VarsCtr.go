@@ -53,6 +53,7 @@ type (
 		writer       *multipart.Writer
 	}
 
+	// TypePath, TypeQuery, TypeForm, TypeHeader, TypeCookie, TypeMultipart(except io.Reader)
 	Field struct {
 		key          string
 		name         string
@@ -62,6 +63,7 @@ type (
 		getValueFunc func(value reflect.Value) (string, error)
 	}
 
+	// TypeJSON, TypeXML, TypeMultipart(io.Reader)
 	IOField struct {
 		key           string
 		name          string
@@ -173,6 +175,10 @@ func (parser *VarsParser) addField(index int, valueType string, field reflect.St
 			fallthrough
 		case TypeHeader:
 			parser.fieldTable[index].getValueFunc, err = getValueGetterFunc(fieldType, TypePath)
+		case TypeForm:
+			parser.fieldTable[index].getValueFunc, err = getValueGetterFunc(fieldType, TypePath)
+		case TypeMultipart:
+			parser.fieldTable[index].getValueFunc, err = getMultipartValueGetterFunc(fieldType, TypePath)
 			// TODO: TypeCookie
 		default:
 		}
@@ -197,18 +203,12 @@ func (parser *VarsParser) addIOField(index int, valueType string, field reflect.
 		}
 
 		switch valueType {
-		case TypeForm:
-			err = parser.checkContentType(headers.MIMEApplicationForm)
-			if err == nil {
-				parser.ioFieldTable[index].getReaderFunc, err = getReaderGetterFunc(fieldType, TypePath)
-			}
 		case TypeJSON:
-			err = parser.checkContentType(headers.MIMEApplicationJSONCharsetUTF8)
-		case TypeMultipart:
-			err = parser.checkContentType(headers.MIMEMultipartForm)
-
+			parser.ioFieldTable[index].getReaderFunc, err = getJSONReaderGetterFunc(fieldType, valueType)
 		case TypeXML:
-			err = parser.checkContentType(headers.MIMEApplicationXMLCharsetUTF8)
+			parser.ioFieldTable[index].getReaderFunc, err = getXMLReaderGetterFunc(fieldType, valueType)
+		case TypeMultipart:
+			parser.ioFieldTable[index].getReaderFunc = getReaderFromReader
 		default:
 		}
 	}
@@ -232,16 +232,34 @@ func (parser *VarsParser) parse(paramType reflect.Type) (err error) {
 					fallthrough
 				case TypeQuery:
 					fallthrough
+				case TypeCookie:
+					fallthrough
 				case TypeHeader:
 					err = parser.addField(i, valueType, field)
 				case TypeForm:
-					fallthrough
+					err = parser.checkContentType(headers.MIMEApplicationForm)
+					if err == nil {
+						err = parser.addField(i, valueType, field)
+					}
 				case TypeJSON:
-					fallthrough
-				case TypeMultipart:
-					fallthrough
+					err = parser.checkContentType(headers.MIMEApplicationJSONCharsetUTF8)
+					if err == nil {
+						err = parser.addIOField(i, valueType, field)
+					}
 				case TypeXML:
-					fallthrough
+					err = parser.checkContentType(headers.MIMEApplicationXMLCharsetUTF8)
+					if err == nil {
+						err = parser.addIOField(i, valueType, field)
+					}
+				case TypeMultipart:
+					err = parser.checkContentType(headers.MIMEMultipartForm)
+					if err == nil {
+						if field.Type == ReaderType {
+							err = parser.addIOField(i, valueType, field)
+						} else {
+							err = parser.addField(i, valueType, field)
+						}
+					}
 				default:
 					err = UnrecognizedFieldTypeError(field.Tag.Get(KeyType))
 				}
