@@ -14,7 +14,6 @@ const (
 	ServiceMustBeStruct           = "service must be struct"
 	UnrecognizedHTTPMethod        = "http method is unrecognized"
 	ParamTypeMustBePtrOfStruct    = "param type must be ptr of struct"
-	ValueIsNotStringer            = "value is not a stringer"
 	ValueIsNotString              = "value is not a string"
 	ValueIsNotInt                 = "value is not a int"
 	DuplicatedPathKey             = "duplicated path key"
@@ -41,10 +40,6 @@ func UnrecognizedHTTPMethodError(method string) error {
 
 func ParamTypeMustBePtrOfStructError(p reflect.Type) error {
 	return errors.New(ParamTypeMustBePtrOfStruct + ": " + p.String())
-}
-
-func ValueIsNotStringerError(p reflect.Type) error {
-	return errors.New(ValueIsNotStringer + ": " + p.String())
 }
 
 func ValueIsNotStringError(p reflect.Type) error {
