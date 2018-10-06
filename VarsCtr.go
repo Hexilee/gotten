@@ -458,7 +458,8 @@ func (varsCtr VarsCtr) resolveMultipartBody() (err error) {
 	}
 
 	for key, path := range varsCtr.multipartFiles {
-		file, err := os.Open(path)
+		var file *os.File
+		file, err = os.Open(path)
 		defer file.Close()
 		if err == nil {
 			if partWriter, err = writer.CreateFormFile(key, filepath.Base(file.Name())); err == nil {

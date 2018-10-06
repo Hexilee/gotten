@@ -4,7 +4,9 @@ import (
 	"github.com/Hexilee/gotten"
 	"github.com/Hexilee/gotten/headers"
 	"github.com/stretchr/testify/assert"
+	"io"
 	"net/http"
+	"os"
 	"reflect"
 	"strings"
 	"testing"
@@ -223,10 +225,57 @@ func TestRequestError(t *testing.T) {
 		Build()
 
 	assert.Nil(t, err)
-	assert.Nil(t, err)
 	service := new(TextService)
 	assert.Nil(t, creator.Impl(service))
 	assert.NotNil(t, service.Get)
 	_, err = service.Get(nil)
 	assert.Error(t, err)
+}
+
+func TestResolveMultipartError(t *testing.T) {
+	type MultipartFile struct {
+		Reader io.Reader `type:"part"`
+	}
+
+	type UploadService struct {
+		Upload func(params *MultipartFile) (*http.Request, error)
+	}
+
+	service := new(UploadService)
+
+	file, err := os.Open("testAssets/Concurrency-in-Go.pdf")
+	assert.Nil(t, err)
+	file.Close()
+
+	creator, err := gotten.NewBuilder().
+		SetBaseUrl("https://mock.io").
+		Build()
+	assert.Nil(t, err)
+
+	creator.Impl(service)
+	assert.NotNil(t, service.Upload)
+	_, err = service.Upload(&MultipartFile{file})
+	assert.Error(t, err)
+	assert.Equal(t, "read testAssets/Concurrency-in-Go.pdf: file already closed", err.Error())
+
+	type NotExistFile struct {
+		File gotten.FilePath `type:"part"`
+	}
+
+	type NotExistFileService struct {
+		Upload func(params *NotExistFile) (*http.Request, error)
+	}
+
+	wrongService := new(NotExistFileService)
+	creator, err = gotten.NewBuilder().
+		SetBaseUrl("https://mock.io").
+		Build()
+	assert.Nil(t, err)
+
+	creator.Impl(wrongService)
+	assert.NotNil(t, wrongService.Upload)
+	_, err = wrongService.Upload(&NotExistFile{"Concurrency-in-Go.pdf"})
+
+	assert.Error(t, err)
+	assert.Equal(t, "open Concurrency-in-Go.pdf: no such file or directory", err.Error())
 }
