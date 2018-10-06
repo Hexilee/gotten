@@ -195,6 +195,7 @@ func (parser *VarsParser) addField(index int, valueType string, field reflect.St
 		case TypePath:
 			if exist := parser.pathKeys.deleteKey(key); !exist {
 				err = UnrecognizedPathKeyError(key)
+				break
 			}
 			parser.fieldTable[index].require = true // path is always required
 			fallthrough
