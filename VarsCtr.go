@@ -625,6 +625,8 @@ func processKey(rawKey, valueType, fieldName string) (key string) {
 		case TypeXML:
 			fallthrough
 		case TypeForm:
+			fallthrough
+		case TypeCookie:
 			key = strcase.ToSnake(fieldName)
 		case TypeHeader:
 			key = strcase.ToScreamingKebab(fieldName)

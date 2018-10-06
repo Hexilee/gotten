@@ -160,6 +160,31 @@ func TestHeadersAllRequest(t *testing.T) {
 	assert.Equal(t, TestString, req.Header.Get(headers.HeaderContentType))
 }
 
+func TestCookieAllParams(t *testing.T) {
+	creator, err := gotten.NewBuilder().
+		SetBaseUrl("https://mock.io").
+		SetClient(mockClient).
+		Build()
+	assert.Nil(t, err)
+	var service AllTypesService
+	assert.Nil(t, creator.Impl(&service))
+	req, err := service.CookieAllParamsRequest(&CookieAllParams{
+		Ga:         TestString,
+		GaId:       TestInt,
+		QscSession: TestStringer,
+	})
+	assert.Nil(t, err)
+	cookie, err := req.Cookie("ga")
+	assert.Nil(t, err)
+	assert.Equal(t, TestString, cookie.Value)
+	cookie, err = req.Cookie("ga_id")
+	assert.Nil(t, err)
+	assert.Equal(t, TestString, cookie.Value)
+	cookie, err = req.Cookie("qsc_session")
+	assert.Nil(t, err)
+	assert.Equal(t, TestString, cookie.Value)
+}
+
 type (
 	AllTypesService struct {
 		FormParamsRequest            func(*FormParams) (*http.Request, error)                        `method:"POST" path:"/form"`
@@ -170,6 +195,7 @@ type (
 		XMLSingleRequest             func(*XMLSingleParams) (*http.Request, error)                   `method:"POST" path:"/xml"`
 		JSONSingleParamsRequest      func(*JSONSingleParams) (*http.Request, error)                  `method:"POST" path:"/json"`
 		HeadersAllParamsRequest      func(*HeadersAllParams) (*http.Request, error)                  `path:"headers"`
+		CookieAllParamsRequest       func(*CookieAllParams) (*http.Request, error)                   `path:"cookie"`
 	}
 
 	FormParams struct {
@@ -228,6 +254,12 @@ type (
 		Host        string `type:"header"`
 		Location    string `type:"header"`
 		ContentType string `type:"header"`
+	}
+
+	CookieAllParams struct {
+		Ga         string       `type:"cookie"`
+		GaId       int          `type:"cookie"`
+		QscSession fmt.Stringer `type:"cookie"`
 	}
 
 	SerializationStruct struct {
