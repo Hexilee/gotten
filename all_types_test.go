@@ -7,6 +7,7 @@ import (
 	"github.com/Hexilee/gotten/headers"
 	"github.com/stretchr/testify/assert"
 	"io"
+	"io/ioutil"
 	"net/http"
 	"strings"
 	"testing"
@@ -117,6 +118,14 @@ func TestXMLRequest(t *testing.T) {
 	assert.Equal(t, TestXML, req.PostFormValue("reader"))
 	assert.True(t, strings.HasPrefix(req.Header.Get(headers.HeaderContentType), headers.MIMEMultipartForm))
 	assert.Equal(t, "/xml", req.URL.Path)
+
+	req, err = service.XMLSingleRequest(&XMLSingleParams{TestSerializationObject})
+	assert.Nil(t, err)
+	body, err := ioutil.ReadAll(req.Body)
+	assert.Nil(t, err)
+	assert.Equal(t, TestXML, string(body))
+	assert.Equal(t, headers.MIMEApplicationXMLCharsetUTF8, req.Header.Get(headers.HeaderContentType))
+	assert.Equal(t, "/xml", req.URL.Path)
 }
 
 type (
@@ -126,6 +135,7 @@ type (
 		MultipartRequest             func(*MultipartParams) (*http.Request, error)                   `method:"POST" path:"/multipart"`
 		XMLAllRequest                func(*XMLAllParams) (*http.Request, error)                      `method:"POST" path:"/xml"`
 		XMLAllWithDefaultRequest     func(*XMLAllWithDefaultParams) (*http.Request, error)           `method:"POST" path:"/xml"`
+		XMLSingleRequest             func(*XMLSingleParams) (*http.Request, error)                   `method:"POST" path:"/xml"`
 	}
 
 	FormParams struct {
@@ -170,6 +180,10 @@ type (
 		String   string               `type:"xml" default:"<SerializationStruct><Data>1</Data></SerializationStruct>"`
 		Stringer fmt.Stringer         `type:"xml" default:"<SerializationStruct><Data>1</Data></SerializationStruct>"`
 		Reader   io.Reader            `type:"xml" default:"<SerializationStruct><Data>1</Data></SerializationStruct>"`
+	}
+
+	XMLSingleParams struct {
+		Xml *SerializationStruct `type:"xml"`
 	}
 
 	SerializationStruct struct {
