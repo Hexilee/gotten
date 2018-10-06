@@ -201,7 +201,7 @@ func (creator *Creator) Impl(service interface{}) (err error) {
 								switch fieldType.Out(0) {
 								case ResponseType:
 									fieldValue.Set(reflect.MakeFunc(fieldType, creator.getCompleteFunc(varsParser, method)))
-								case reflect.TypeOf(new(http.Request)):
+								case RequestType:
 									fieldValue.Set(reflect.MakeFunc(fieldType, creator.getRequestFunc(varsParser, method)))
 								default:
 								}

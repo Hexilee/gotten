@@ -21,7 +21,10 @@ import (
 const (
 	PathKeyRegexp = `\{[a-zA-Z_][0-9a-zA-Z_]*\}`
 	ZeroStr       = ""
-	ZeroInt       = 0
+
+	// json/xml Marshal nil
+	NullStr = "null"
+	ZeroInt = 0
 )
 
 var (
@@ -539,6 +542,7 @@ func (varsCtr *VarsCtr) setValuesByIOFields(value reflect.Value) (err error) {
 					varsCtr.body = reader
 				case headers.MIMEApplicationForm:
 					var data []byte
+					reader, err = field.getValue(fieldValue)
 					if err == nil && !reader.Empty() {
 						data, err = ioutil.ReadAll(reader)
 						varsCtr.formValues.Add(field.key, string(data))

@@ -24,6 +24,9 @@ const (
 	// support types: fmt.Stringer, int, string
 	TypeForm = "form"
 
+	// support types: fmt.Stringer, int, string
+	TypeCookie = "cookie"
+
 	// support types: fmt.Stringer, int, string, Reader, FilePath
 	TypeMultipart = "part"
 
@@ -32,9 +35,6 @@ const (
 
 	// support types: fmt.Stringer, Reader, string, struct, slice, map
 	TypeXML = "xml"
-
-	// support types: string, *http.Cookie
-	TypeCookie = "cookie"
 )
 
 type (
@@ -47,6 +47,8 @@ var (
 	FilePathType = reflect.TypeOf(filePath)
 	IntType      = reflect.TypeOf(int(1))
 	StringType   = reflect.TypeOf("")
+
+	ZeroStringer fmt.Stringer = bytes.NewBufferString("")
 )
 
 func getMultipartValueGetterFunc(fieldType reflect.Type, valueType string) (getValueFunc func(value reflect.Value) (string, error), err error) {
@@ -134,14 +136,15 @@ func getXMLReaderGetterFunc(fieldType reflect.Type, valueType string) (getValueF
 func getMarshalReaderGetterFunc(marshalFunc func(obj interface{}) ([]byte, error)) func(value reflect.Value) (Reader, error) {
 	return func(value reflect.Value) (Reader, error) {
 		data, err := marshalFunc(value.Interface())
-		return newReadCloser(bytes.NewBuffer(data), false), err
+		return newReadCloser(bytes.NewBuffer(data), len(data) == 4 && string(data) == NullStr), err
 	}
 }
 
 func getValueFromStringer(value reflect.Value) (str string, err error) {
+	fmt.Println(value.Type())
 	stringer, ok := value.Interface().(fmt.Stringer)
 	if !ok {
-		panic(ValueIsNotStringerError(value.Type()))
+		stringer = ZeroStringer
 	}
 	str = stringer.String()
 	return
@@ -180,7 +183,7 @@ func getValueFromInt(value reflect.Value) (str string, err error) {
 func getReaderFromStringer(value reflect.Value) (reader Reader, err error) {
 	stringer, ok := value.Interface().(fmt.Stringer)
 	if !ok {
-		panic(ValueIsNotStringerError(value.Type()))
+		stringer = ZeroStringer
 	}
 
 	str := stringer.String()
