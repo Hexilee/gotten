@@ -145,6 +145,21 @@ func TestJSONRequest(t *testing.T) {
 	assert.Equal(t, "/json", req.URL.Path)
 }
 
+func TestHeadersAllRequest(t *testing.T) {
+	creator, err := gotten.NewBuilder().
+		SetBaseUrl("https://mock.io").
+		SetClient(mockClient).
+		Build()
+	assert.Nil(t, err)
+	var service AllTypesService
+	assert.Nil(t, creator.Impl(&service))
+	req, err := service.HeadersAllParamsRequest(&HeadersAllParams{TestString, TestString, TestString})
+	assert.Nil(t, err)
+	assert.Equal(t, TestString, req.Header.Get("HOST"))
+	assert.Equal(t, TestString, req.Header.Get("LOCATION"))
+	assert.Equal(t, TestString, req.Header.Get(headers.HeaderContentType))
+}
+
 type (
 	AllTypesService struct {
 		FormParamsRequest            func(*FormParams) (*http.Request, error)                        `method:"POST" path:"/form"`
@@ -154,6 +169,7 @@ type (
 		XMLAllWithDefaultRequest     func(*XMLAllWithDefaultParams) (*http.Request, error)           `method:"POST" path:"/xml"`
 		XMLSingleRequest             func(*XMLSingleParams) (*http.Request, error)                   `method:"POST" path:"/xml"`
 		JSONSingleParamsRequest      func(*JSONSingleParams) (*http.Request, error)                  `method:"POST" path:"/json"`
+		HeadersAllParamsRequest      func(*HeadersAllParams) (*http.Request, error)                  `path:"headers"`
 	}
 
 	FormParams struct {
@@ -206,6 +222,12 @@ type (
 
 	JSONSingleParams struct {
 		Json *SerializationStruct `type:"json"`
+	}
+
+	HeadersAllParams struct {
+		Host        string `type:"header"`
+		Location    string `type:"header"`
+		ContentType string `type:"header"`
 	}
 
 	SerializationStruct struct {
