@@ -111,7 +111,7 @@ func (builder *Builder) AddReaderUnmarshaler(unmarshaler ReadUnmarshaler, checke
 	return builder
 }
 
-func (builder *Builder) AddReaderUnmarshalerFunc(unmarshaler ReadUnmarshalFunc, checker Checker) *Builder {
+func (builder *Builder) AddReadUnmarshalFunc(unmarshaler ReadUnmarshalFunc, checker Checker) *Builder {
 	return builder.AddReaderUnmarshaler(unmarshaler, checker)
 }
 
@@ -310,6 +310,7 @@ func (creator Creator) getCompleteFunc(varsParser *VarsParser, method string) fu
 			readUnmarshaler, exist := creator.unmarshalers.Check(resp)
 			if !exist {
 				results[1].Set(reflect.ValueOf(NoUnmarshalerFoundForResponseError(resp)).Convert(ErrorType))
+				results[0].Set(reflect.ValueOf(newResponse(resp, nil)).Convert(ResponseType))
 				return results
 			}
 

@@ -40,8 +40,9 @@ func init() {
 }
 
 func getText(w http.ResponseWriter, _ *http.Request) {
+	w.Header().Set(headers.HeaderContentType, headers.MIMETextPlain)
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte("OK"))
+	w.Write([]byte("true"))
 }
 
 func getPost(w http.ResponseWriter, r *http.Request) {
