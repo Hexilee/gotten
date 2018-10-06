@@ -82,11 +82,38 @@ func TestMultipartRequest(t *testing.T) {
 	assert.Equal(t, "/multipart", req.URL.Path)
 }
 
+func TestXMLRequest(t *testing.T) {
+	creator, err := gotten.NewBuilder().
+		SetBaseUrl("https://mock.io").
+		SetClient(mockClient).
+		Build()
+	assert.Nil(t, err)
+	var service AllTypesService
+	assert.Nil(t, creator.Impl(&service))
+	req, err := service.XMLAllRequest(&XMLAllParams{
+		Int:      TestInt,
+		Xml:      TestSerializationObject,
+		String:   TestXML,
+		Stringer: bytes.NewBufferString(TestXML),
+		Reader:   bytes.NewBufferString(TestXML),
+	})
+	assert.Nil(t, err)
+	req.ParseMultipartForm(2 << 32)
+	assert.Equal(t, TestString, req.PostFormValue("int"))
+	assert.Equal(t, TestXML, req.PostFormValue("xml"))
+	assert.Equal(t, TestXML, req.PostFormValue("string"))
+	assert.Equal(t, TestXML, req.PostFormValue("stringer"))
+	assert.Equal(t, TestXML, req.PostFormValue("reader"))
+	assert.True(t, strings.HasPrefix(req.Header.Get(headers.HeaderContentType), headers.MIMEMultipartForm))
+	assert.Equal(t, "/xml", req.URL.Path)
+}
+
 type (
 	AllTypesService struct {
 		FormParamsRequest            func(*FormParams) (*http.Request, error)                        `method:"POST" path:"/form"`
 		FormParamsWithDefaultRequest func(withDefault *FormParamsWithDefault) (*http.Request, error) `method:"POST" path:"/form"`
 		MultipartRequest             func(*MultipartParams) (*http.Request, error)                   `method:"POST" path:"/multipart"`
+		XMLAllRequest                func(*XMLAllParams) (*http.Request, error)                      `method:"POST" path:"/xml"`
 	}
 
 	FormParams struct {
@@ -115,6 +142,14 @@ type (
 		Reader         io.Reader            `type:"part"`
 		JsonAfterForm  *SerializationStruct `type:"json"`
 		XmlAfterForm   *SerializationStruct `type:"xml" `
+	}
+
+	XMLAllParams struct {
+		Int      int                  `type:"part"`
+		Xml      *SerializationStruct `type:"xml" `
+		String   string               `type:"xml"`
+		Stringer fmt.Stringer         `type:"xml"`
+		Reader   io.Reader            `type:"xml"`
 	}
 
 	SerializationStruct struct {
