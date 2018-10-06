@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/Hexilee/gotten"
+	"github.com/Hexilee/gotten/headers"
 	"github.com/stretchr/testify/assert"
 	"io"
 	"net/http"
@@ -135,6 +136,7 @@ func TestCreator_Impl(t *testing.T) {
 
 	assert.Nil(t, err)
 	assert.Equal(t, http.StatusCreated, resp.StatusCode())
+	assert.Equal(t, headers.MIMEApplicationJSONCharsetUTF8, resp.ContentType())
 	assert.Nil(t, resp.Unmarshal(&uploadedData))
 	assert.Equal(t, 1, uploadedData.Uid)
 	assert.Equal(t, "Hexilee", uploadedData.Username)
