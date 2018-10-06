@@ -1,3 +1,9 @@
+[![Coverage Status](https://coveralls.io/repos/github/Hexilee/gotten/badge.svg)](https://coveralls.io/github/Hexilee/gotten)
+[![Go Report Card](https://goreportcard.com/badge/github.com/Hexilee/gotten)](https://goreportcard.com/report/github.com/Hexilee/gotten)
+[![Build Status](https://travis-ci.org/Hexilee/gotten.svg?branch=master)](https://travis-ci.org/Hexilee/gotten)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/Hexilee/gotten/blob/master/LICENSE)
+[![Documentation](https://godoc.org/github.com/Hexilee/gotten?status.svg)](https://godoc.org/github.com/Hexilee/gotten)
+
 #### Usage
 
 ```go
