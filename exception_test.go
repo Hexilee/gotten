@@ -1,6 +1,7 @@
 package gotten
 
 import (
+	"github.com/Hexilee/gotten/headers"
 	"github.com/stretchr/testify/assert"
 	"reflect"
 	"testing"
@@ -58,4 +59,49 @@ func TestGetReaderFromString(t *testing.T) {
 		assert.Equal(t, ValueIsNotStringError(reflect.TypeOf(reader)), err)
 	}()
 	getReaderFromString(reflect.ValueOf(reader))
+}
+
+func TestCheckContentType1(t *testing.T) {
+	contentType := headers.MIMEMultipartForm
+	parser := new(VarsParser)
+	parser.contentType = headers.MIMETextPlain
+	defer func() {
+		err := recover()
+		assert.Equal(t, "Unsupported content type of parser: "+parser.contentType, err)
+	}()
+	parser.checkContentType(contentType)
+}
+
+func TestCheckContentType2(t *testing.T) {
+	parser := new(VarsParser)
+	parser.contentType = headers.MIMETextPlain
+	contentType := headers.MIMEApplicationForm
+	defer func() {
+		err := recover()
+		assert.Equal(t, "Unsupported content type of parser: "+parser.contentType, err)
+	}()
+
+	parser.checkContentType(contentType)
+}
+
+func TestCheckContentType3(t *testing.T) {
+	contentType := headers.MIMEApplicationJSONCharsetUTF8
+	parser := new(VarsParser)
+	parser.contentType = headers.MIMETextPlain
+	defer func() {
+		err := recover()
+		assert.Equal(t, "Unsupported content type of parser: "+parser.contentType, err)
+	}()
+	parser.checkContentType(contentType)
+}
+
+func TestCheckContentType4(t *testing.T) {
+	contentType := headers.MIMETextPlain
+	defer func() {
+		err := recover()
+		assert.Equal(t, "Unsupported content type of parser: "+contentType, err)
+	}()
+	parser := new(VarsParser)
+	parser.contentType = headers.MIMEApplicationJSONCharsetUTF8
+	parser.checkContentType(contentType)
 }

@@ -326,7 +326,7 @@ func (parser *VarsParser) checkContentType(contentType string) (err error) {
 			parser.setContentType(contentType)
 		case headers.MIMEMultipartForm:
 		default:
-			panic("Unsupported content type of parser: " + contentType)
+			panic("Unsupported content type of parser: " + parser.contentType)
 		}
 	case headers.MIMEApplicationForm:
 		switch parser.contentType {
@@ -340,22 +340,22 @@ func (parser *VarsParser) checkContentType(contentType string) (err error) {
 			parser.setContentType(contentType)
 		case headers.MIMEApplicationForm:
 		default:
-			panic("Unsupported content type of parser: " + contentType)
+			panic("Unsupported content type of parser: " + parser.contentType)
 		}
 	case headers.MIMEApplicationJSONCharsetUTF8:
 		fallthrough
 	case headers.MIMEApplicationXMLCharsetUTF8:
 		switch parser.contentType {
-		case headers.MIMEApplicationJSONCharsetUTF8:
-			fallthrough
 		case headers.MIMEApplicationXMLCharsetUTF8:
+			fallthrough
+		case headers.MIMEApplicationJSONCharsetUTF8:
 			err = ContentTypeConflictError(parser.contentType, contentType)
 		case ZeroStr:
 			parser.setContentType(contentType)
 		case headers.MIMEApplicationForm:
 		case headers.MIMEMultipartForm:
 		default:
-			panic("Unsupported content type of parser: " + contentType)
+			panic("Unsupported content type of parser: " + parser.contentType)
 		}
 	default:
 		panic("Unsupported content type: " + contentType)
