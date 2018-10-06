@@ -128,6 +128,23 @@ func TestXMLRequest(t *testing.T) {
 	assert.Equal(t, "/xml", req.URL.Path)
 }
 
+func TestJSONRequest(t *testing.T) {
+	creator, err := gotten.NewBuilder().
+		SetBaseUrl("https://mock.io").
+		SetClient(mockClient).
+		Build()
+	assert.Nil(t, err)
+	var service AllTypesService
+	assert.Nil(t, creator.Impl(&service))
+	req, err := service.JSONSingleParamsRequest(&JSONSingleParams{TestSerializationObject})
+	assert.Nil(t, err)
+	body, err := ioutil.ReadAll(req.Body)
+	assert.Nil(t, err)
+	assert.Equal(t, TestJSON, string(body))
+	assert.Equal(t, headers.MIMEApplicationJSONCharsetUTF8, req.Header.Get(headers.HeaderContentType))
+	assert.Equal(t, "/json", req.URL.Path)
+}
+
 type (
 	AllTypesService struct {
 		FormParamsRequest            func(*FormParams) (*http.Request, error)                        `method:"POST" path:"/form"`
@@ -136,6 +153,7 @@ type (
 		XMLAllRequest                func(*XMLAllParams) (*http.Request, error)                      `method:"POST" path:"/xml"`
 		XMLAllWithDefaultRequest     func(*XMLAllWithDefaultParams) (*http.Request, error)           `method:"POST" path:"/xml"`
 		XMLSingleRequest             func(*XMLSingleParams) (*http.Request, error)                   `method:"POST" path:"/xml"`
+		JSONSingleParamsRequest      func(*JSONSingleParams) (*http.Request, error)                  `method:"POST" path:"/json"`
 	}
 
 	FormParams struct {
@@ -184,6 +202,10 @@ type (
 
 	XMLSingleParams struct {
 		Xml *SerializationStruct `type:"xml"`
+	}
+
+	JSONSingleParams struct {
+		Json *SerializationStruct `type:"json"`
 	}
 
 	SerializationStruct struct {
