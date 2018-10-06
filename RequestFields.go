@@ -197,16 +197,6 @@ func getReaderFromString(value reflect.Value) (reader Reader, err error) {
 	return
 }
 
-//func getReaderFromInt(value reflect.Value) (reader Reader, err error) {
-//	val, ok := value.Interface().(int)
-//	if !ok {
-//		panic(ValueIsNotIntError(value.Type()))
-//	}
-//
-//	reader = newReadCloser(bytes.NewBufferString(strconv.Itoa(val)), val == ZeroInt)
-//	return
-//}
-
 func getReaderFromReader(value reflect.Value) (reader Reader, err error) {
 	ioReader, ok := value.Interface().(io.Reader)
 	if !ok {

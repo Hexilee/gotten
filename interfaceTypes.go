@@ -3,6 +3,7 @@ package gotten
 import (
 	"fmt"
 	"io"
+	"net/http"
 	"reflect"
 )
 
@@ -12,6 +13,7 @@ type (
 		reader   io.Reader
 		error    error
 		response Response
+		request  *http.Request
 	}
 )
 
@@ -22,4 +24,5 @@ var (
 	ReaderType   = typesValue.FieldByName("reader").Type()
 	ErrorType    = typesValue.FieldByName("error").Type()
 	ResponseType = typesValue.FieldByName("response").Type()
+	RequestType  = typesValue.FieldByName("request").Type()
 )

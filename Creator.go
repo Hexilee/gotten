@@ -167,7 +167,6 @@ func (creator *Creator) Impl(service interface{}) (err error) {
 					fieldValue.CanSet() &&
 					fieldType.NumIn() == 1 &&
 					fieldType.NumOut() == 2 &&
-					fieldType.Out(0) == ResponseType &&
 					fieldType.Out(1) == ErrorType {
 					paramsType := fieldType.In(0)
 					varsParser, parseErr := newVarsParser(fieldTag.Get(KeyPath))
@@ -197,70 +196,14 @@ func (creator *Creator) Impl(service interface{}) (err error) {
 							case http.MethodOptions:
 								fallthrough
 							case http.MethodTrace:
-								rawFunc := func(values []reflect.Value) []reflect.Value {
-									results := []reflect.Value{
-										reflect.New(ResponseType).Elem(),
-										reflect.New(ErrorType).Elem(),
-									}
-									varsCtr := varsParser.Build()
-									setValuesErr := varsCtr.setValues(values[0])
-
-									if setValuesErr != nil {
-										results[1].Set(reflect.ValueOf(setValuesErr).Convert(ErrorType))
-										return results
-									}
-
-									finalUrl, err := newUrlCtr(creator.baseUrl, varsCtr).getUrl()
-									if err != nil {
-										results[1].Set(reflect.ValueOf(err).Convert(ErrorType))
-										return results
-									}
-
-									var body io.Reader
-									contentType := varsCtr.getContentType()
-
-									if contentType != ZeroStr {
-										body, err = varsCtr.getBody()
-										if err != nil {
-											results[1].Set(reflect.ValueOf(err).Convert(ErrorType))
-											return results
-										}
-									}
-
-									req, err := http.NewRequest(method, finalUrl.String(), body)
-									if err != nil {
-										results[1].Set(reflect.ValueOf(err).Convert(ErrorType))
-										return results
-									}
-
-									header := varsCtr.getHeader()
-									for key, values := range header {
-										for _, value := range values {
-											req.Header.Add(key, value)
-										}
-									}
-
-									if contentType != ZeroStr {
-										req.Header.Set(headers.HeaderContentType, contentType)
-									}
-
-									resp, err := creator.client.Do(req)
-
-									if err != nil {
-										results[1].Set(reflect.ValueOf(err).Convert(ErrorType))
-										return results
-									}
-
-									readUnmarshaler, exist := creator.unmarshalers.Check(resp)
-									if !exist {
-										results[1].Set(reflect.ValueOf(NoUnmarshalerFoundForResponseError(resp)).Convert(ErrorType))
-										return results
-									}
-
-									results[0].Set(reflect.ValueOf(newResponse(resp, readUnmarshaler)).Convert(ResponseType))
-									return results
+								switch fieldType.Out(0) {
+								case ResponseType:
+									fieldValue.Set(reflect.MakeFunc(fieldType, creator.getCompleteFunc(varsParser, method)))
+								case reflect.TypeOf(new(http.Request)):
+									fieldValue.Set(reflect.MakeFunc(fieldType, creator.getRequestFunc(varsParser, method)))
+								default:
 								}
-								fieldValue.Set(reflect.MakeFunc(fieldType, rawFunc))
+
 							default:
 								err = UnrecognizedHTTPMethodError(method)
 							}
@@ -275,6 +218,86 @@ func (creator *Creator) Impl(service interface{}) (err error) {
 		}
 	}
 	return
+}
+
+// for func(*params) (*http.Request, error)
+func (creator Creator) getRequestFunc(varsParser *VarsParser, method string) func([]reflect.Value) []reflect.Value {
+	return func(values []reflect.Value) []reflect.Value {
+		results := []reflect.Value{
+			reflect.New(RequestType).Elem(),
+			reflect.New(ErrorType).Elem(),
+		}
+		varsCtr := varsParser.Build()
+		setValuesErr := varsCtr.setValues(values[0])
+
+		if setValuesErr != nil {
+			results[1].Set(reflect.ValueOf(setValuesErr).Convert(ErrorType))
+			return results
+		}
+
+		finalUrl, err := newUrlCtr(creator.baseUrl, varsCtr).getUrl()
+		if err != nil {
+			results[1].Set(reflect.ValueOf(err).Convert(ErrorType))
+			return results
+		}
+
+		var body io.Reader
+		contentType := varsCtr.getContentType()
+
+		if contentType != ZeroStr {
+			body, err = varsCtr.getBody()
+			if err != nil {
+				results[1].Set(reflect.ValueOf(err).Convert(ErrorType))
+				return results
+			}
+		}
+
+		req, err := http.NewRequest(method, finalUrl.String(), body)
+		if err != nil {
+			results[1].Set(reflect.ValueOf(err).Convert(ErrorType))
+			return results
+		}
+
+		header := varsCtr.getHeader()
+		for key, values := range header {
+			for _, value := range values {
+				req.Header.Add(key, value)
+			}
+		}
+
+		if contentType != ZeroStr {
+			req.Header.Set(headers.HeaderContentType, contentType)
+		}
+
+		results[0].Set(reflect.ValueOf(req).Convert(RequestType))
+		return results
+	}
+}
+
+// for func(*params) (gotten.Response, error)
+func (creator Creator) getCompleteFunc(varsParser *VarsParser, method string) func([]reflect.Value) []reflect.Value {
+	return func(values []reflect.Value) []reflect.Value {
+		results := creator.getRequestFunc(varsParser, method)(values)
+		req := results[0].Interface().(*http.Request)
+		results[0] = reflect.New(ResponseType).Elem()
+		if results[1].IsNil() {
+			resp, err := creator.client.Do(req)
+
+			if err != nil {
+				results[1].Set(reflect.ValueOf(err).Convert(ErrorType))
+				return results
+			}
+
+			readUnmarshaler, exist := creator.unmarshalers.Check(resp)
+			if !exist {
+				results[1].Set(reflect.ValueOf(NoUnmarshalerFoundForResponseError(resp)).Convert(ErrorType))
+				return results
+			}
+
+			results[0].Set(reflect.ValueOf(newResponse(resp, readUnmarshaler)).Convert(ResponseType))
+		}
+		return results
+	}
 }
 
 func (unmarshalers ConditionalUnmarshalers) Check(response *http.Response) (unmarshaler ReadUnmarshaler, exist bool) {
