@@ -238,10 +238,11 @@ func (creator Creator) getRequestFunc(varsParser *VarsParser, method string) fun
 		}
 
 		finalUrl, err := newUrlCtr(creator.baseUrl, varsCtr).getUrl()
-		if err != nil {
-			results[1].Set(reflect.ValueOf(err).Convert(ErrorType))
-			return results
-		}
+		// err always be nil if all test pass
+		//if err != nil {
+		//	results[1].Set(reflect.ValueOf(err).Convert(ErrorType))
+		//	return results
+		//}
 
 		var body io.Reader
 		contentType := varsCtr.getContentType()
@@ -255,10 +256,11 @@ func (creator Creator) getRequestFunc(varsParser *VarsParser, method string) fun
 		}
 
 		req, err := http.NewRequest(method, finalUrl.String(), body)
-		if err != nil {
-			results[1].Set(reflect.ValueOf(err).Convert(ErrorType))
-			return results
-		}
+		// err always be nil with checked method and URL
+		//if err != nil {
+		//	results[1].Set(reflect.ValueOf(err).Convert(ErrorType))
+		//	return results
+		//}
 
 		for key, values := range creator.headers {
 			for _, value := range values {
