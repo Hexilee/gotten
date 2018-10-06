@@ -22,7 +22,7 @@ const (
 	PathKeyRegexp = `\{[a-zA-Z_][0-9a-zA-Z_]*\}`
 	ZeroStr       = ""
 
-	// json/xml Marshal nil
+	// json Marshal nil
 	NullStr = "null"
 	ZeroInt = 0
 )
@@ -306,13 +306,11 @@ func (parser *VarsParser) setContentType(contentType string) {
 // TODO: test it
 // can only be called by parse()
 func (parser *VarsParser) checkContentType(contentType string) (err error) {
-ContentTypeSwitch:
 	switch contentType {
 	case headers.MIMEMultipartForm:
 		switch parser.contentType {
 		case headers.MIMEApplicationForm:
 			err = ContentTypeConflictError(parser.contentType, contentType)
-			break ContentTypeSwitch
 		case ZeroStr:
 			fallthrough
 		case headers.MIMEApplicationJSONCharsetUTF8:
@@ -327,7 +325,6 @@ ContentTypeSwitch:
 		switch parser.contentType {
 		case headers.MIMEMultipartForm:
 			err = ContentTypeConflictError(parser.contentType, contentType)
-			break ContentTypeSwitch
 		case ZeroStr:
 			fallthrough
 		case headers.MIMEApplicationJSONCharsetUTF8:
@@ -346,7 +343,6 @@ ContentTypeSwitch:
 			fallthrough
 		case headers.MIMEApplicationXMLCharsetUTF8:
 			err = ContentTypeConflictError(parser.contentType, contentType)
-			break ContentTypeSwitch
 		case ZeroStr:
 			parser.setContentType(contentType)
 		case headers.MIMEApplicationForm:
