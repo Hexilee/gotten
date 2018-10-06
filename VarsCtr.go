@@ -512,7 +512,8 @@ func (varsCtr *VarsCtr) setValuesByFields(value reflect.Value) (err error) {
 					varsCtr.multipartValues[field.key] = val
 				}
 			default:
-				panic(UnsupportedValueTypeError(field.valueType))
+				// never occur
+				//panic(UnsupportedValueTypeError(field.valueType))
 			}
 			if err != nil {
 				break
@@ -546,7 +547,8 @@ func (varsCtr *VarsCtr) setValuesByIOFields(value reflect.Value) (err error) {
 					reader, err = field.getValue(fieldValue)
 					varsCtr.multipartReaders[field.key] = MultipartReader{reader, header}
 				default:
-					panic("Unsupported content type: " + varsCtr.contentType)
+					// never occur
+					//panic("Unsupported content type: " + varsCtr.contentType)
 				}
 			case TypeXML:
 				switch varsCtr.contentType {
@@ -566,7 +568,8 @@ func (varsCtr *VarsCtr) setValuesByIOFields(value reflect.Value) (err error) {
 					reader, err = field.getValue(fieldValue)
 					varsCtr.multipartReaders[field.key] = MultipartReader{reader, header}
 				default:
-					panic("Unsupported content type: " + varsCtr.contentType)
+					// never occur
+					//panic("Unsupported content type: " + varsCtr.contentType)
 				}
 			case TypeMultipart:
 				switch varsCtr.contentType {
@@ -576,10 +579,12 @@ func (varsCtr *VarsCtr) setValuesByIOFields(value reflect.Value) (err error) {
 					reader, err = field.getValue(fieldValue)
 					varsCtr.multipartReaders[field.key] = MultipartReader{reader, header}
 				default:
-					panic("Unsupported content type: " + varsCtr.contentType)
+					// never occur
+					//panic("Unsupported content type: " + varsCtr.contentType)
 				}
 			default:
-				panic(UnsupportedValueTypeError(field.valueType))
+				// never occur
+				//panic(UnsupportedValueTypeError(field.valueType))
 			}
 			if err != nil {
 				break

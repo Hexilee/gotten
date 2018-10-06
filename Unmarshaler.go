@@ -28,9 +28,9 @@ func UnmarshalAdapter(fn UnmarshalFunc) Unmarshaler {
 	return fn
 }
 
-func ReaderFuncAdapter(fn ReadUnmarshalFunc) ReadUnmarshaler {
-	return fn
-}
+//func ReaderFuncAdapter(fn ReadUnmarshalFunc) ReadUnmarshaler {
+//	return fn
+//}
 
 func NewReaderAdapter(unmarshaler Unmarshaler) ReadUnmarshaler {
 	return &ReaderAdapter{unmarshaler}

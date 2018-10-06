@@ -105,3 +105,7 @@ func TestCheckContentType4(t *testing.T) {
 	parser.contentType = headers.MIMEApplicationJSONCharsetUTF8
 	parser.checkContentType(contentType)
 }
+
+func TestSetValuesByFields(t *testing.T) {
+
+}
