@@ -144,6 +144,8 @@ func (builder *Builder) Build() (creator *Creator, err error) {
 	return
 }
 
+// func(*params) (*http.Request, error) ||
+// func(*params) (gotten.Response, error)
 func (creator *Creator) Impl(service interface{}) (err error) {
 	serviceVal := reflect.ValueOf(service)
 	if serviceVal.Type().Kind() != reflect.Ptr {
@@ -258,13 +260,20 @@ func (creator Creator) getRequestFunc(varsParser *VarsParser, method string) fun
 			return results
 		}
 
-		header := varsCtr.getHeader()
-		for key, values := range header {
+		for key, values := range creator.headers {
 			for _, value := range values {
 				req.Header.Add(key, value)
 			}
 		}
 
+		// cover header of creator
+		for key, values := range varsCtr.getHeader() {
+			for _, value := range values {
+				req.Header.Set(key, value)
+			}
+		}
+
+		// cover all ContentType
 		if contentType != ZeroStr {
 			req.Header.Set(headers.HeaderContentType, contentType)
 		}
