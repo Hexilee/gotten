@@ -29,6 +29,7 @@ func init() {
 
 	router = chi.NewRouter()
 	router.Get("/post/{year}/{month}/{day}", getPost)
+	router.Get("/text", getText)
 	router.Post("/post/{year}/{month}/{day}", addPost)
 	router.Post("/post", addPostByForm)
 	router.Post("/avatar", addAvatar)
@@ -36,6 +37,11 @@ func init() {
 	mockBuilder := mock.NewClientBuilder()
 	mockBuilder.Register("mock.io", router)
 	mockClient = mockBuilder.Build()
+}
+
+func getText(w http.ResponseWriter, _ *http.Request) {
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte("OK"))
 }
 
 func getPost(w http.ResponseWriter, r *http.Request) {

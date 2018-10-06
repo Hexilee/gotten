@@ -6,6 +6,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"net/http"
 	"reflect"
+	"strings"
 	"testing"
 )
 
@@ -190,4 +191,42 @@ func TestContentTypeConflictError(t *testing.T) {
 	err = creator.Impl(&wrongServiceThree)
 	assert.Error(t, err)
 	assert.Equal(t, gotten.ContentTypeConflictError(headers.MIMEApplicationXMLCharsetUTF8, headers.MIMEApplicationJSONCharsetUTF8), err)
+}
+
+func TestNoUnmarshalerFoundForResponseError(t *testing.T) {
+	type TextService struct {
+		Get func(*struct{}) (gotten.Response, error) `path:"/text"`
+	}
+
+	creator, err := gotten.NewBuilder().
+		SetBaseUrl("https://mock.io").
+		SetClient(mockClient).
+		Build()
+
+	assert.Nil(t, err)
+	service := new(TextService)
+	assert.Nil(t, creator.Impl(service))
+	assert.NotNil(t, service.Get)
+
+	_, err = service.Get(nil)
+	assert.Error(t, err)
+	assert.True(t, strings.HasPrefix(err.Error(), gotten.NoUnmarshalerFoundForResponse))
+}
+
+func TestRequestError(t *testing.T) {
+	type TextService struct {
+		Get func(*struct{}) (gotten.Response, error) `path:"/text"`
+	}
+
+	creator, err := gotten.NewBuilder().
+		SetBaseUrl("https://mock.io").
+		Build()
+
+	assert.Nil(t, err)
+	assert.Nil(t, err)
+	service := new(TextService)
+	assert.Nil(t, creator.Impl(service))
+	assert.NotNil(t, service.Get)
+	_, err = service.Get(nil)
+	assert.Error(t, err)
 }
