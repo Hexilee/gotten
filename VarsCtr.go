@@ -245,11 +245,11 @@ func (parser *VarsParser) addIOField(index int, valueType string, field reflect.
 }
 
 func (parser *VarsParser) parse(paramType reflect.Type) (err error) {
-	paramElem := paramType.Elem()
-	if paramType.Kind() != reflect.Ptr || paramElem.Kind() != reflect.Struct {
-		err = ParamTypeMustBePtrOfStructError(paramElem)
+	if paramType.Kind() != reflect.Ptr || paramType.Elem().Kind() != reflect.Struct {
+		err = ParamTypeMustBePtrOfStructError(paramType)
 	}
 	if err == nil {
+		paramElem := paramType.Elem()
 		parser.fieldTable = make([]*Field, paramElem.NumField())
 		parser.ioFieldTable = make([]*IOField, paramElem.NumField())
 		for i := 0; i < paramElem.NumField(); i++ {

@@ -87,7 +87,7 @@ func TestEmptyRequiredVariableError2(t *testing.T) {
 	assert.NotNil(t, rightService.Get)
 	_, err = rightService.Get(&rightParam{})
 	assert.NotNil(t, err)
-	assert.Equal(t, gotten.EmptyRequiredVariableError("value").Error(), err.Error())
+	assert.Equal(t, gotten.EmptyRequiredVariableError("Value").Error(), err.Error())
 }
 
 func TestUnrecognizedPathKeyError(t *testing.T) {
@@ -103,4 +103,18 @@ func TestUnrecognizedPathKeyError(t *testing.T) {
 	err = creator.Impl(&wrongService)
 	assert.Error(t, err)
 	assert.Equal(t, gotten.UnrecognizedPathKeyError("name"), err)
+}
+
+func TestParamTypeMustBePtrOfStructError(t *testing.T) {
+	type rightParam struct {
+		Id int `type:"path"`
+	}
+	var wrongService struct {
+		Get func(param rightParam) (gotten.Response, error) `path:"{id}"`
+	}
+	creator, err := gotten.NewBuilder().SetBaseUrl("https://mock.io").Build()
+	assert.Nil(t, err)
+	err = creator.Impl(&wrongService)
+	assert.Error(t, err)
+	assert.Equal(t, gotten.ParamTypeMustBePtrOfStructError(reflect.TypeOf(rightParam{})).Error(), err.Error())
 }
