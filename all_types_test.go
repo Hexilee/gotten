@@ -106,6 +106,17 @@ func TestXMLRequest(t *testing.T) {
 	assert.Equal(t, TestXML, req.PostFormValue("reader"))
 	assert.True(t, strings.HasPrefix(req.Header.Get(headers.HeaderContentType), headers.MIMEMultipartForm))
 	assert.Equal(t, "/xml", req.URL.Path)
+
+	req, err = service.XMLAllWithDefaultRequest(&XMLAllWithDefaultParams{})
+	assert.Nil(t, err)
+	req.ParseMultipartForm(2 << 32)
+	assert.Equal(t, TestString, req.PostFormValue("int"))
+	assert.Equal(t, TestXML, req.PostFormValue("xml"))
+	assert.Equal(t, TestXML, req.PostFormValue("string"))
+	assert.Equal(t, TestXML, req.PostFormValue("stringer"))
+	assert.Equal(t, TestXML, req.PostFormValue("reader"))
+	assert.True(t, strings.HasPrefix(req.Header.Get(headers.HeaderContentType), headers.MIMEMultipartForm))
+	assert.Equal(t, "/xml", req.URL.Path)
 }
 
 type (
@@ -114,6 +125,7 @@ type (
 		FormParamsWithDefaultRequest func(withDefault *FormParamsWithDefault) (*http.Request, error) `method:"POST" path:"/form"`
 		MultipartRequest             func(*MultipartParams) (*http.Request, error)                   `method:"POST" path:"/multipart"`
 		XMLAllRequest                func(*XMLAllParams) (*http.Request, error)                      `method:"POST" path:"/xml"`
+		XMLAllWithDefaultRequest     func(*XMLAllWithDefaultParams) (*http.Request, error)           `method:"POST" path:"/xml"`
 	}
 
 	FormParams struct {
@@ -146,10 +158,18 @@ type (
 
 	XMLAllParams struct {
 		Int      int                  `type:"part"`
-		Xml      *SerializationStruct `type:"xml" `
+		Xml      *SerializationStruct `type:"xml"`
 		String   string               `type:"xml"`
 		Stringer fmt.Stringer         `type:"xml"`
 		Reader   io.Reader            `type:"xml"`
+	}
+
+	XMLAllWithDefaultParams struct {
+		Int      int                  `type:"part" default:"1"`
+		Xml      *SerializationStruct `type:"xml" default:"<SerializationStruct><Data>1</Data></SerializationStruct>"`
+		String   string               `type:"xml" default:"<SerializationStruct><Data>1</Data></SerializationStruct>"`
+		Stringer fmt.Stringer         `type:"xml" default:"<SerializationStruct><Data>1</Data></SerializationStruct>"`
+		Reader   io.Reader            `type:"xml" default:"<SerializationStruct><Data>1</Data></SerializationStruct>"`
 	}
 
 	SerializationStruct struct {

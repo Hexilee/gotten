@@ -47,8 +47,6 @@ var (
 	FilePathType = reflect.TypeOf(filePath)
 	IntType      = reflect.TypeOf(int(1))
 	StringType   = reflect.TypeOf("")
-
-	ZeroStringer fmt.Stringer = bytes.NewBufferString("")
 )
 
 func getMultipartValueGetterFunc(fieldType reflect.Type, valueType string) (getValueFunc func(value reflect.Value) (string, error), err error) {
@@ -136,7 +134,7 @@ func getXMLReaderGetterFunc(fieldType reflect.Type, valueType string) (getValueF
 func getMarshalReaderGetterFunc(marshalFunc func(obj interface{}) ([]byte, error)) func(value reflect.Value) (Reader, error) {
 	return func(value reflect.Value) (Reader, error) {
 		data, err := marshalFunc(value.Interface())
-		return newReadCloser(bytes.NewBuffer(data), len(data) == 0 || len(data) == 4 && string(data) == NullStr), err
+		return newReadCloser(bytes.NewBuffer(data), value.IsNil()), err
 	}
 }
 
@@ -202,7 +200,7 @@ func getReaderFromString(value reflect.Value) (reader Reader, err error) {
 func getReaderFromReader(value reflect.Value) (reader Reader, err error) {
 	ioReader, ok := value.Interface().(io.Reader)
 	if !ok {
-		panic(value.Type().String() + " is not a Reader")
+		ioReader = ZeroReader
 	}
 
 	reader = newReadCloser(ioReader, value.IsNil())

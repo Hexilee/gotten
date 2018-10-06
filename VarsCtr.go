@@ -2,6 +2,7 @@ package gotten
 
 import (
 	"bytes"
+	"fmt"
 	"github.com/Hexilee/gotten/headers"
 	"github.com/iancoleman/strcase"
 	"io"
@@ -28,7 +29,9 @@ const (
 )
 
 var (
-	pathKeyRegexp, _ = regexp.Compile(PathKeyRegexp)
+	ZeroStringer     fmt.Stringer = bytes.NewBufferString("")
+	ZeroReader       io.Reader    = bytes.NewBufferString("")
+	pathKeyRegexp, _              = regexp.Compile(PathKeyRegexp)
 )
 
 type (
