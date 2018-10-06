@@ -278,6 +278,16 @@ func (creator Creator) getRequestFunc(varsParser *VarsParser, method string) fun
 			req.Header.Set(headers.HeaderContentType, contentType)
 		}
 
+		// add cookie of creator
+		for _, cookie := range creator.cookies {
+			req.AddCookie(cookie)
+		}
+
+		// add cookie of VarsCtr
+		for _, cookie := range varsCtr.getCookies() {
+			req.AddCookie(cookie)
+		}
+
 		results[0].Set(reflect.ValueOf(req).Convert(RequestType))
 		return results
 	}

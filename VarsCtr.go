@@ -41,6 +41,7 @@ type (
 		getBody() (io.Reader, error)
 		getHeader() http.Header
 		getContentType() string
+		getCookies() []*http.Cookie
 	}
 
 	VarsParser struct {
@@ -65,6 +66,7 @@ type (
 		multipartFiles   map[string]string
 		multipartReaders map[string]MultipartReader
 		header           http.Header
+		cookies          []*http.Cookie
 		body             io.Reader
 		writer           *multipart.Writer
 	}
@@ -198,13 +200,14 @@ func (parser *VarsParser) addField(index int, valueType string, field reflect.St
 			fallthrough
 		case TypeQuery:
 			fallthrough
+		case TypeCookie:
+			fallthrough
 		case TypeHeader:
-			parser.fieldTable[index].getValueFunc, err = getValueGetterFunc(fieldType, TypePath)
+			fallthrough
 		case TypeForm:
 			parser.fieldTable[index].getValueFunc, err = getValueGetterFunc(fieldType, TypePath)
 		case TypeMultipart:
 			parser.fieldTable[index].getValueFunc, err = getMultipartValueGetterFunc(fieldType, TypePath)
-			// TODO: TypeCookie
 		default:
 		}
 	}
@@ -400,6 +403,10 @@ func (varsCtr VarsCtr) getUrl() (result *url.URL, err error) {
 	return
 }
 
+func (varsCtr VarsCtr) getCookies() []*http.Cookie {
+	return varsCtr.cookies
+}
+
 func (varsCtr VarsCtr) getContentType() (contentType string) {
 	if varsCtr.contentType == headers.MIMEMultipartForm {
 		contentType = varsCtr.writer.FormDataContentType()
@@ -484,6 +491,11 @@ func (varsCtr *VarsCtr) setValuesByFields(value reflect.Value) (err error) {
 				val, err = field.getValue(fieldValue)
 				if err == nil {
 					varsCtr.header.Add(field.key, val)
+				}
+			case TypeCookie:
+				val, err = field.getValue(fieldValue)
+				if err == nil {
+					varsCtr.cookies = append(varsCtr.cookies, &http.Cookie{Name: field.key, Value: val})
 				}
 			case TypeForm:
 				val, err = field.getValue(fieldValue)
