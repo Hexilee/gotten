@@ -33,7 +33,7 @@ func TestClientImpl_Do(t *testing.T) {
 	assert.Nil(t, err)
 	wrongReq, err := http.NewRequest(http.MethodGet, "https://wrong.me", nil)
 	assert.Nil(t, err)
-	for _, testCase := range [] struct {
+	for _, testCase := range []struct {
 		request *http.Request
 		err     error
 		bodyStr string

@@ -19,7 +19,7 @@ type (
 		Description string
 	}
 
-	ExpectResult []*Item
+	ExpectResult   []*Item
 	ObjectNotFound struct {
 		Key         string
 		Reason      string
@@ -33,9 +33,9 @@ type (
 
 var (
 	creator, err = gotten.NewBuilder().
-		SetBaseUrl("https://api.sample.com").
-		AddCookie(&http.Cookie{Name: "clientcookieid", Value: "121", Expires: time.Now().Add(111 * time.Second)}).
-		Build()
+			SetBaseUrl("https://api.sample.com").
+			AddCookie(&http.Cookie{Name: "clientcookieid", Value: "121", Expires: time.Now().Add(111 * time.Second)}).
+			Build()
 
 	simpleServiceImpl = new(SimpleService)
 )
