@@ -638,6 +638,7 @@ func processKey(rawKey, valueType, fieldName string) (key string) {
 		case TypeHeader:
 			key = strcase.ToScreamingKebab(fieldName)
 		default:
+			panic("Unsupported valueType: " + valueType)
 		}
 	}
 	return

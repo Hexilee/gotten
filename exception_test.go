@@ -106,6 +106,11 @@ func TestCheckContentType4(t *testing.T) {
 	parser.checkContentType(contentType)
 }
 
-func TestSetValuesByFields(t *testing.T) {
-
+func TestProcessKey(t *testing.T) {
+	valueType := "name"
+	defer func() {
+		err := recover()
+		assert.Equal(t, "Unsupported valueType: "+valueType, err)
+	}()
+	processKey("", valueType, "Value")
 }

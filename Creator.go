@@ -208,7 +208,7 @@ func (creator *Creator) Impl(service interface{}) (err error) {
 									fieldValue.Set(reflect.MakeFunc(fieldType, creator.getCompleteFunc(varsParser, method)))
 								case RequestType:
 									fieldValue.Set(reflect.MakeFunc(fieldType, creator.getRequestFunc(varsParser, method)))
-								default:
+									//default:
 								}
 
 							default:
