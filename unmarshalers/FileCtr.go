@@ -207,7 +207,7 @@ func getSizeAndHash(reader io.Reader) (size int64, hash string, err error) {
 func newTempFile() (tempFile *os.File, filePath string, err error) {
 	tempFile, err = ioutil.TempFile(ZeroStr, TempFilePattern)
 	if err == nil {
-		filePath = filepath.Join(os.TempDir(), tempFile.Name())
+		filePath = tempFile.Name()
 	}
 	return
 }
