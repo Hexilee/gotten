@@ -115,7 +115,8 @@ func (factory *CheckerFactory) Create() (checker CheckerFunc) {
 		checker = func(response *http.Response) bool {
 			return factory.statusChecker(response) && factory.headerChecker(response)
 		}
-	default:
+		//default:
+		// never occur
 	}
 	return checker
 }

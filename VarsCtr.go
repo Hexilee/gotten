@@ -209,7 +209,8 @@ func (parser *VarsParser) addField(index int, valueType string, field reflect.St
 			parser.fieldTable[index].getValueFunc, err = getValueGetterFunc(fieldType, TypePath)
 		case TypeMultipart:
 			parser.fieldTable[index].getValueFunc, err = getMultipartValueGetterFunc(fieldType, TypePath)
-		default:
+			//default:
+			// never occur
 		}
 	}
 	return
@@ -238,7 +239,8 @@ func (parser *VarsParser) addIOField(index int, valueType string, field reflect.
 			parser.ioFieldTable[index].getReaderFunc, err = getXMLReaderGetterFunc(fieldType, valueType)
 		case TypeMultipart:
 			parser.ioFieldTable[index].getReaderFunc = getReaderFromReader
-		default:
+			//default:
+			// never occur
 		}
 	}
 	return
@@ -511,7 +513,7 @@ func (varsCtr *VarsCtr) setValuesByFields(value reflect.Value) (err error) {
 				} else {
 					varsCtr.multipartValues[field.key] = val
 				}
-			default:
+				//default:
 				// never occur
 				//panic(UnsupportedValueTypeError(field.valueType))
 			}
@@ -546,7 +548,7 @@ func (varsCtr *VarsCtr) setValuesByIOFields(value reflect.Value) (err error) {
 					header.Add(headers.HeaderContentType, headers.MIMEApplicationJavaScriptCharsetUTF8)
 					reader, err = field.getValue(fieldValue)
 					varsCtr.multipartReaders[field.key] = MultipartReader{reader, header}
-				default:
+					//default:
 					// never occur
 					//panic("Unsupported content type: " + varsCtr.contentType)
 				}
@@ -567,7 +569,7 @@ func (varsCtr *VarsCtr) setValuesByIOFields(value reflect.Value) (err error) {
 					header.Add(headers.HeaderContentType, headers.MIMEApplicationXMLCharsetUTF8)
 					reader, err = field.getValue(fieldValue)
 					varsCtr.multipartReaders[field.key] = MultipartReader{reader, header}
-				default:
+					//default:
 					// never occur
 					//panic("Unsupported content type: " + varsCtr.contentType)
 				}
@@ -578,11 +580,11 @@ func (varsCtr *VarsCtr) setValuesByIOFields(value reflect.Value) (err error) {
 					header.Add(headers.HeaderContentType, headers.MIMEOctetStream)
 					reader, err = field.getValue(fieldValue)
 					varsCtr.multipartReaders[field.key] = MultipartReader{reader, header}
-				default:
+					//default:
 					// never occur
 					//panic("Unsupported content type: " + varsCtr.contentType)
 				}
-			default:
+				//default:
 				// never occur
 				//panic(UnsupportedValueTypeError(field.valueType))
 			}
