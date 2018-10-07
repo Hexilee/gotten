@@ -24,6 +24,7 @@ const (
 	SomePathVarHasNoValue         = "some pathValue has no value"
 	NoUnmarshalerFoundForResponse = "no unmarshaler found for response"
 	ContentTypeConflict           = "content type conflict: "
+	UnsupportedFuncType           = "function type is not supported"
 )
 
 func MustPassPtrToImplError(p reflect.Type) error {
@@ -87,4 +88,8 @@ func NoUnmarshalerFoundForResponseError(response *http.Response) error {
 
 func ContentTypeConflictError(former string, latter string) error {
 	return errors.New(fmt.Sprintf(ContentTypeConflict+" %s(former), %s(former)", former, latter))
+}
+
+func UnsupportedFuncTypeError(p reflect.Type) error {
+	return errors.New(UnsupportedFuncType + ": " + p.String())
 }

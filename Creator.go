@@ -165,11 +165,16 @@ func (creator *Creator) Impl(service interface{}) (err error) {
 				fieldType := field.Type
 				fieldTag := field.Tag
 				fieldValue := serviceVal.Field(i)
-				if fieldType.Kind() == reflect.Func &&
-					fieldValue.CanSet() &&
-					fieldType.NumIn() == 1 &&
-					fieldType.NumOut() == 2 &&
-					fieldType.Out(1) == ErrorType {
+				if fieldType.Kind() != reflect.Func ||
+					!fieldValue.CanSet() ||
+					fieldType.NumIn() != 1 ||
+					fieldType.NumOut() != 2 ||
+					fieldType.Out(1) != ErrorType ||
+					fieldType.Out(0) != ResponseType && fieldType.Out(0) != RequestType {
+					err = UnsupportedFuncTypeError(fieldType)
+				}
+
+				if err == nil {
 					paramsType := fieldType.In(0)
 					varsParser, parseErr := newVarsParser(fieldTag.Get(KeyPath))
 					if err = parseErr; err == nil {
@@ -211,10 +216,9 @@ func (creator *Creator) Impl(service interface{}) (err error) {
 							}
 						}
 					}
-
-					if err != nil {
-						break
-					}
+				}
+				if err != nil {
+					break
 				}
 			}
 		}

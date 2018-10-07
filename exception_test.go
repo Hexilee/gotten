@@ -99,7 +99,7 @@ func TestCheckContentType4(t *testing.T) {
 	contentType := headers.MIMETextPlain
 	defer func() {
 		err := recover()
-		assert.Equal(t, "Unsupported content type: " + contentType, err)
+		assert.Equal(t, "Unsupported content type: "+contentType, err)
 	}()
 	parser := new(VarsParser)
 	parser.contentType = headers.MIMEApplicationJSONCharsetUTF8

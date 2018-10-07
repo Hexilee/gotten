@@ -49,7 +49,6 @@ func TestClientImpl_Do(t *testing.T) {
 			assert.Nil(t, err)
 			assert.Equal(t, testCase.bodyStr, string(result))
 		} else {
-			fmt.Println(testCase.request.Host)
 			assert.NotNil(t, testCase.err)
 			assert.Equal(t, testCase.err.Error(), err.Error())
 		}

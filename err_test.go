@@ -40,7 +40,7 @@ func TestUnrecognizedHTTPMethodError(t *testing.T) {
 	var wrongService struct {
 		WrongMethod func(*struct {
 			Id int `type:"query"`
-		}) (*http.Response, error) `method:"GO"`
+		}) (*http.Request, error) `method:"GO"`
 	}
 	creator, err := gotten.NewBuilder().SetBaseUrl("https://mock.io").Build()
 	assert.Nil(t, err)
@@ -53,7 +53,7 @@ func TestDuplicatedPathKeyError(t *testing.T) {
 	var wrongService struct {
 		WrongMethod func(*struct {
 			Id int `type:"path"`
-		}) (*http.Response, error) `path:"{id}/{id}"`
+		}) (*http.Request, error) `path:"{id}/{id}"`
 	}
 	creator, err := gotten.NewBuilder().SetBaseUrl("https://mock.io").Build()
 	assert.Nil(t, err)
@@ -278,4 +278,17 @@ func TestResolveMultipartError(t *testing.T) {
 
 	assert.Error(t, err)
 	assert.Equal(t, "open Concurrency-in-Go.pdf: no such file or directory", err.Error())
+}
+
+func TestUnsupportedFuncTypeError(t *testing.T) {
+	var wrongService struct {
+		WrongMethod func(*struct {
+			Id int `type:"query"`
+		}) (*http.Response, error)
+	}
+	creator, err := gotten.NewBuilder().SetBaseUrl("https://mock.io").Build()
+	assert.Nil(t, err)
+	err = creator.Impl(&wrongService)
+	assert.NotNil(t, err)
+	assert.Equal(t, gotten.UnsupportedFuncTypeError(reflect.TypeOf(wrongService.WrongMethod)), err)
 }
