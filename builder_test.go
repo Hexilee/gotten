@@ -93,9 +93,10 @@ func TestBuilder_AddReaderUnmarshalerFunc(t *testing.T) {
 
 	creator, err := gotten.NewBuilder().
 		SetBaseUrl("https://mock.io").
-		AddReadUnmarshalFunc(func(body io.Reader, _ http.Header, v interface{}) (err error) {
+		AddReadUnmarshalFunc(func(body io.ReadCloser, _ http.Header, v interface{}) (err error) {
 			var data []byte
 			data, err = ioutil.ReadAll(body)
+			body.Close()
 			if err == nil {
 				var success bool
 				success, err = strconv.ParseBool(string(data))

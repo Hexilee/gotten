@@ -8,10 +8,10 @@ import (
 
 type (
 	ReadUnmarshaler interface {
-		Unmarshal(reader io.Reader, header http.Header, v interface{}) error
+		Unmarshal(reader io.ReadCloser, header http.Header, v interface{}) error
 	}
 
-	ReadUnmarshalFunc func(reader io.Reader, header http.Header, v interface{}) error
+	ReadUnmarshalFunc func(reader io.ReadCloser, header http.Header, v interface{}) error
 
 	ReaderAdapter struct {
 		unmarshaler Unmarshaler
@@ -40,13 +40,14 @@ func (fn UnmarshalFunc) Unmarshal(data []byte, v interface{}) error {
 	return fn(data, v)
 }
 
-func (fn ReadUnmarshalFunc) Unmarshal(reader io.Reader, header http.Header, v interface{}) error {
+func (fn ReadUnmarshalFunc) Unmarshal(reader io.ReadCloser, header http.Header, v interface{}) error {
 	return fn(reader, header, v)
 }
 
-func (adapter *ReaderAdapter) Unmarshal(reader io.Reader, header http.Header, v interface{}) (err error) {
+func (adapter *ReaderAdapter) Unmarshal(reader io.ReadCloser, header http.Header, v interface{}) (err error) {
 	var body []byte
 	body, err = ioutil.ReadAll(reader)
+	reader.Close()
 	if err == nil {
 		err = adapter.unmarshaler.Unmarshal(body, v)
 	}

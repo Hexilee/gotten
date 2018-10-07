@@ -312,7 +312,6 @@ func (parser *VarsParser) setContentType(contentType string) {
 	parser.contentType = contentType
 }
 
-// TODO: test it
 // can only be called by parse()
 func (parser *VarsParser) checkContentType(contentType string) (err error) {
 	switch contentType {
