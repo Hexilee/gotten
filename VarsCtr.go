@@ -445,12 +445,12 @@ func (varsCtr VarsCtr) resolveMultipartBody() (err error) {
 	}
 
 	for key, reader := range varsCtr.multipartReaders {
-		if x, ok := reader.reader.(io.Closer); ok {
-			defer x.Close()
-		}
-
 		if partWriter, err = writer.CreateFormField(key); err == nil {
 			_, err = io.Copy(partWriter, reader.reader)
+		}
+
+		if x, ok := reader.reader.(io.Closer); ok {
+			x.Close()
 		}
 
 		if err != nil {
@@ -461,13 +461,12 @@ func (varsCtr VarsCtr) resolveMultipartBody() (err error) {
 	for key, path := range varsCtr.multipartFiles {
 		var file *os.File
 		file, err = os.Open(path)
-		defer file.Close()
 		if err == nil {
 			if partWriter, err = writer.CreateFormFile(key, filepath.Base(file.Name())); err == nil {
 				_, err = io.Copy(partWriter, file)
 			}
 		}
-
+		file.Close() // close
 		if err != nil {
 			break
 		}

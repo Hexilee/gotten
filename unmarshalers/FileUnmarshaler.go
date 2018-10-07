@@ -30,7 +30,7 @@ const (
 	ZeroStr = ""
 )
 
-func (unmarshaler FileUnmarshaler) Unmarshal(reader io.Reader, header http.Header, v interface{}) (err error) {
+func (unmarshaler FileUnmarshaler) Unmarshal(reader io.ReadCloser, header http.Header, v interface{}) (err error) {
 	var filename string
 	var ext string
 	var hash string
@@ -57,5 +57,7 @@ func (unmarshaler FileUnmarshaler) Unmarshal(reader io.Reader, header http.Heade
 			}
 		}
 	}
+
+	reader.Close()
 	return
 }
