@@ -2,6 +2,7 @@ package gotten
 
 import (
 	"net/url"
+	"strings"
 )
 
 type (
@@ -21,7 +22,10 @@ func newUrlCtr(base *url.URL, vars VarsController) *UrlCtr {
 func (urlCtr *UrlCtr) getUrl() (result *url.URL, err error) {
 	result, err = urlCtr.vars.getUrl()
 	if err == nil {
-		result = urlCtr.base.ResolveReference(result)
+		base := *urlCtr.base
+		base.Path = strings.TrimRight(base.Path, "/") + "/" + strings.TrimLeft(result.Path, "/")
+		base.RawQuery = result.RawQuery
+		result = &base
 	}
 	return
 }
