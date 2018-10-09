@@ -243,7 +243,7 @@ func TestResolveMultipartError(t *testing.T) {
 
 	service := new(UploadService)
 
-	file, err := os.Open("testAssets/Concurrency-in-Go.pdf")
+	file, err := os.Open("testAssets/avatar.jpg")
 	assert.Nil(t, err)
 	file.Close()
 
@@ -256,7 +256,7 @@ func TestResolveMultipartError(t *testing.T) {
 	assert.NotNil(t, service.Upload)
 	_, err = service.Upload(&MultipartFile{file})
 	assert.Error(t, err)
-	assert.Equal(t, "read testAssets/Concurrency-in-Go.pdf: file already closed", err.Error())
+	assert.Equal(t, "read testAssets/avatar.jpg: file already closed", err.Error())
 
 	type NotExistFile struct {
 		File gotten.FilePath `type:"part"`
@@ -274,10 +274,10 @@ func TestResolveMultipartError(t *testing.T) {
 
 	creator.Impl(wrongService)
 	assert.NotNil(t, wrongService.Upload)
-	_, err = wrongService.Upload(&NotExistFile{"Concurrency-in-Go.pdf"})
+	_, err = wrongService.Upload(&NotExistFile{"avatar.jpg"})
 
 	assert.Error(t, err)
-	assert.Equal(t, "open Concurrency-in-Go.pdf: no such file or directory", err.Error())
+	assert.Equal(t, "open avatar.jpg: no such file or directory", err.Error())
 }
 
 func TestUnsupportedFuncTypeError(t *testing.T) {

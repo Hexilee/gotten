@@ -125,7 +125,7 @@ func TestCreator_Impl(t *testing.T) {
 	resp, err = service.UploadAvatar(&UploadAvatarParams{
 		Uid:      1,
 		Username: "Hexilee",
-		Avatar:   "testAssets/Concurrency-in-Go.pdf",
+		Avatar:   "testAssets/avatar.jpg",
 		Description: &AvatarDescription{
 			Creator:   "Hexilee",
 			CreatedAt: now,
@@ -140,11 +140,11 @@ func TestCreator_Impl(t *testing.T) {
 	assert.Nil(t, resp.Unmarshal(&uploadedData))
 	assert.Equal(t, 1, uploadedData.Uid)
 	assert.Equal(t, "Hexilee", uploadedData.Username)
-	assert.Equal(t, "Concurrency-in-Go.pdf", uploadedData.Filename)
+	assert.Equal(t, "avatar.jpg", uploadedData.Filename)
 	assert.Equal(t, "Hexilee", uploadedData.Creator)
 	assert.True(t, now.Equal(uploadedData.CreatedAt))
 
-	file, err := os.Open("testAssets/Concurrency-in-Go.pdf")
+	file, err := os.Open("testAssets/avatar.jpg")
 	assert.Nil(t, err)
 	h := md5.New()
 	n, err := io.Copy(h, file)
